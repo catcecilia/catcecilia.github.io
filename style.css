@@ -1,0 +1,31 @@
+body {
+    background-color: RGB(232, 232,232);
+}
+h1, h2, h3, h4 {
+    color: RGB(79,35,63);
+}
+a {
+    color: RGB(79,35,63);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+img {
+    border-radius: 50%;
+    max-width: 50%;
+    height: auto;
+
+}
+
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+}
+
+.readable {
+    width: fit-content;
+    block-size: fit-content;
+    max-width: 75%;
+}
