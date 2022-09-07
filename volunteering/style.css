@@ -1,0 +1,59 @@
+#title, #bottom{
+    text-align: center;
+    color: black;
+}
+
+
+
+#content {
+    grid-template-columns: repeat(5, 1fr);
+    grid-auto-rows: min-max(150px, auto);
+    grid-gap: 10px;
+    display: grid;
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+#content div {
+background-color: RGB(79,35,63);
+padding: 30px;
+}
+
+.one {
+    grid-column: 1/3;
+    grid-row: 1/5;
+}
+
+.two {
+    grid-row: 1/5;
+}
+
+.three {
+    grid-column: 1/3;
+    grid-row: 5/7;
+}
+
+.four {
+    grid-column: 3/6;
+    grid-row: 5/10;
+
+}
+
+.five {
+    grid-column: 4/6;
+    grid-row: 1/4;
+
+}
+
+body {
+    background-color: RGB(232, 232,232);
+    color: RGB(79,35,63);
+}
+
+div {
+    text-align: center;
+}
+
+h1{
+    color: RGB(79,35,63);
+}
