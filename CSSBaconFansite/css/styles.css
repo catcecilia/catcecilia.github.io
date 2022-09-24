@@ -1,0 +1,42 @@
+/***********Tag Selectors ****************/
+body {
+    background-color: white;
+}
+
+h1 {
+    color: red;
+    font-weight: bold;
+    font-family: arial, helvetica;
+}
+/*
+img {
+    background-color:red;
+}*/
+
+/***********Class Selectors ****************/
+.bacon {
+    background-color: green;
+    height: 50px;
+}
+
+.broccoli{
+    background-color: red;
+    height: 50px;
+}
+.circular {
+    border-radius: 100%;
+}
+
+/***********PSUEDO Class Selectors ****************/
+p:hover {
+    color: green;
+    background-color: black;
+    font-weight: bold;
+}
+
+/***********ID Selectors ****************/
+#heading {
+    color: green;
+    font-size: 200px;
+    font-family: Garamond, serif, arial, helvetica;
+}
