@@ -1,0 +1,145 @@
+/*** Element Selectors ***/
+body {
+    font-family: 'Montserrat', sans-serif;
+}
+/*** Headings ***/
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif;
+}
+
+.heading-title {
+    font-size: 3.5rem;
+    line-height: 1.5;
+    font-weight: 900;
+}
+
+h2 {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+h3 {
+    font-size: 1.5rem;
+}
+#cta h3 {
+    font-size: 3rem;
+    font-weight: 900;
+}
+
+
+/*** Class Selectors ***/
+
+.container-fluid {
+    padding: 3% 15%;
+}
+.navbar-brand, .nav-link {
+    color: #f7f7f7;
+}
+
+.navbar-brand {
+    font-family: 'Ubuntu', sans-serif;
+    font-size: 2rem;
+
+}
+
+.navbar {
+    padding: 0 0 4.5rem 0;
+
+}
+
+.nav-link {
+    font-size: 1.2rem;
+    font-family: 'Montserrat', sans-serif;
+    Font-weight: 300;
+}
+
+.download-btn{
+    margin: 5% 3% 5% 1%;
+}
+
+.title-img {
+    width:  20%;
+    transform: rotate(25deg);
+    position: absolute;
+    right: 13%;
+}
+.i-feature{
+    font-size: 2rem;
+    color: #ef8172;
+}
+
+.i-feature:hover{
+    color: #fea9ca;
+}
+
+.img-testimonials {
+    width: 10%;
+    border-radius: 100%;
+    margin: 20px;
+}
+
+.logo-press{
+    width: 15%;
+    margin: 20px 20px 50px;
+}
+
+.carousel-item {
+    padding: 7% 15%;
+
+}
+
+.fa-footer{
+    padding: 0 1% 2.5%;
+}
+
+/*** ID Selectors ***/
+
+#title {
+    background-color: #FF3C68;
+    color: #f7f7f7;
+}
+
+#features {
+    text-align: center;
+    padding: 7% 15%;
+    background-color: #fff;
+    position: relative;
+    z-index: 1;
+}
+
+#testimonials, #press, #cta {
+    text-align: center;
+    background-color: #ef8172;
+    color: #f7f7f7;
+}
+
+#press{
+    padding-bottom: 5%;
+}
+
+#pricing {
+    padding: 10%;
+}
+
+#cta {
+    background-color: #FF3C68;
+    color: #f7f7f7;
+    padding: 15% 5%;
+}
+
+#footer{
+    padding: 5% 5% 0;
+    text-align: center;
+
+}
+/*** Media Queries ***/
+
+@media screen  and (max-width:1024px) {
+    #title {
+        text-align: center;
+    }
+    .title-img {
+    transform: rotate(0deg);
+    position: static;
+    }
+}
