@@ -1,0 +1,14 @@
+.grandparent{
+    background-color: red;
+    flex-direction: column;
+}
+.parent{
+    background-color: green;
+}
+.child{
+    background-color: blue;
+}
+
+div {
+    padding: 5%;
+}
