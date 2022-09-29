@@ -11,13 +11,12 @@ $(".btn").click(function(e){
     playSound(userChosenColor);
     animatePress(userChosenColor);
 
-    checkAnswer(userClickedPattern.length-1);
-});
+    checkAnswer(userClickedPattern.length-1);  //position in the array
 
 function checkAnswer(currentLevel){
-    if (userClickedPattern[currentLevel] === gamePattern[currentLevel]){
+    if (userClickedPattern[currentLevel] === gamePattern[currentLevel]){ //if both are correct in the position in the array
 
-        if(gamePattern.length === userClickedPattern.length){
+        if(gamePattern.length === userClickedPattern.length){ //check to see if this is the last one. if so, new level is started
             setTimeout(nextSequence, 1000);
             userClickedPattern=[];
         }
@@ -26,15 +25,13 @@ function checkAnswer(currentLevel){
         gameOverAudio.play();
         $("body").addClass("game-over");
 
-        setTimeout(function(){
+        setTimeout(function(){           //alerts user to wrong choice
             $("body").removeClass("game-over");
         }, 200);
 
-        $("h1").text("Game Over, Press Any Key to Start");
+        $("h1").text("Game Over, Press Any Key to Start"); //resets game by resetting level, gamePattern, userClickedPattern, started values
         startOver();
-
     }
-
 }
 
 $(document).keydown(function (){
@@ -59,7 +56,6 @@ function startOver(){
     gamePattern = [];
     started = false;
     userClickedPattern=[];
-
 }
 function playSound(chosenColor){
     var audio = new Audio('sounds/'+chosenColor+'.mp3');
