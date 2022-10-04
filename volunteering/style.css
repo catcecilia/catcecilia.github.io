@@ -19,6 +19,10 @@ background-color: RGB(79,35,63);
 padding: 30px;
 }
 
+div {
+align-items: center;
+justify-items: center;
+}
 .one {
     grid-column: 1/3;
     grid-row: 1/4;
