@@ -1,0 +1,46 @@
+.dark-mode{
+    background-color: #15202b;
+    color: #ffffff;
+}
+
+.search-bar{
+    width: auto;
+    margin: 0 auto;
+    display: inline-block;
+}
+.search-bar .form-outline {
+    width: 50%;
+}
+
+input, button {
+    border-width: 0px;
+}
+
+.card {
+    height: 100%;
+    display: inline-block;
+    width: 18rem;
+    margin: 1em;
+    vertical-align: middle;
+}
+
+.owned {
+    opacity: 0.5;
+}
+
+.hidden {
+    display: none;
+}
+
+@keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
+  #filtering{
+    padding-top: 1rem;
+  }
