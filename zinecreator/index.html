@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZINE Creator</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="header">
+      <h1>Zine Creator</h1>
+    </header>
+
+    <div class="zine-title-editor">
+      <div class="input-container">
+        <input type="text" id="zine-title" placeholder="ZINE TITLE" value="My ZINE">
+      </div>
+    </div>
+
+    <div class="pages-grid">
+      <!-- Pages will be dynamically inserted here -->
+    </div>
+
+    <div class="editor-controls">
+      <button id="export-pdf" class="btn secondary">
+        <i class="fas fa-download"></i> Export to PDF (Booklet)
+      </button>
+      <button id="export-one-page" class="btn tertiary">
+        <i class="fas fa-download"></i> Export to Mini Zine PDF (One-Page)
+      </button>
+    </div>
+
+    <!-- Drawing Canvas Modal -->
+    <div id="drawing-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Drawing Canvas</h2>
+          <button id="close-drawing-modal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="canvas-container">
+            <canvas id="drawing-canvas" width="300" height="400"></canvas>
+          </div>
+          
+          <div class="tool-controls">
+            <div class="control-group">
+              <label>Color</label>
+              <input type="color" id="brush-color" value="#000000">
+            </div>
+            
+            <div class="control-group">
+              <label>Brush Size: <span id="brush-size-value">5</span>px</label>
+              <input type="range" id="brush-size" min="1" max="30" value="5">
+            </div>
+            
+            <div class="action-buttons">
+              <button id="add-image" class="btn" style="display: none;">
+                <i class="fas fa-image"></i> Add Image
+              </button>
+              <button id="toggle-mode" class="btn" style="display: none;">
+                Draw Mode
+              </button>
+              <button id="toggle-resize" class="btn" style="display: none;">
+                Move Mode
+              </button>
+              <button id="toggle-eraser" class="btn">
+                Pen
+              </button>
+              <button id="clear-canvas" class="btn">Clear</button>
+              <button id="save-drawing" class="btn primary">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
