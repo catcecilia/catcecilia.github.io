@@ -17,20 +17,28 @@ class Page {
   }
 }
 
-// Default pages
+// Default pages (16 pages with Front and Back Covers)
 const defaultPages = [
-  new Page('text', 'Front Cover'),
-  new Page('text', 'Page 2'),
-  new Page('text', 'Page 3'),
-  new Page('text', 'Page 4'),
-  new Page('text', 'Page 5'),
-  new Page('text', 'Page 6'),
-  new Page('text', 'Page 7'),
-  new Page('text', 'Back Cover'),
+  new Page('text', 'Front Cover'),  // Page 1
+  new Page('text', 'Page 2'),       // Page 2
+  new Page('text', 'Page 3'),       // Page 3
+  new Page('text', 'Page 4'),       // Page 4
+  new Page('text', 'Page 5'),       // Page 5
+  new Page('text', 'Page 6'),       // Page 6
+  new Page('text', 'Page 7'),       // Page 7
+  new Page('text', 'Page 8'),       // Page 8
+  new Page('text', 'Page 9'),       // Page 9
+  new Page('text', 'Page 10'),      // Page 10
+  new Page('text', 'Page 11'),      // Page 11
+  new Page('text', 'Page 12'),      // Page 12
+  new Page('text', 'Page 13'),      // Page 13
+  new Page('text', 'Page 14'),      // Page 14
+  new Page('text', 'Page 15'),      // Page 15
+  new Page('text', 'Back Cover')    // Page 16
 ];
 
 // App State
-let currentZine = new Zine('My ZINE', [...defaultPages]);
+let currentZine = new Zine('My 16-Page Zine', [...defaultPages]);
 let editingPageIndex = null;
 let canvasBackup = null;
 
@@ -38,8 +46,7 @@ let canvasBackup = null;
 const pagesGrid = document.querySelector('.pages-grid');
 const zineTitleInput = document.getElementById('zine-title');
 const exportPdfBtn = document.getElementById('export-pdf');
-const exportOnePageBtn = document.getElementById('export-one-page');
-const exportQuarterZineBtn = document.getElementById('export-quarter-zine');
+const export16PanelBtn = document.getElementById('export-16panel');
 const drawingModal = document.getElementById('drawing-modal');
 const closeDrawingModalBtn = document.getElementById('close-drawing-modal');
 const drawingCanvas = document.getElementById('drawing-canvas');
@@ -56,10 +63,6 @@ const helpModal = document.getElementById('help-modal');
 const showHelpBtn = document.getElementById('show-help');
 const closeHelpModalBtn = document.getElementById('close-help-modal');
 const closeHelpBtn = document.getElementById('close-help-btn');
-const helpModal2 = document.getElementById('help-modal-2');
-const showHelpBtn2 = document.getElementById('show-help-2');
-const closeHelpModalBtn2 = document.getElementById('close-help-modal-2');
-const closeHelpBtn2 = document.getElementById('close-help-btn-2');
 
 // Drawing Canvas State
 let isDrawing = false;
@@ -80,52 +83,86 @@ function init() {
   setupDrawingCanvas();
 }
 
-// Render all pages
+// Render all pages in a 4x4 grid
 function renderPages() {
-  pagesGrid.innerHTML = '';
-  
-  currentZine.pages.forEach((page, index) => {
-    const pageElement = document.createElement('div');
-    pageElement.className = 'zine-page';
+    pagesGrid.innerHTML = '';
     
-    if (page.type === 'image') {
-      pageElement.innerHTML = `
-        <img src="${page.content}" alt="Page ${index + 1}">
-        <div class="zine-page-buttons">
-          <button class="page-btn replace-image-btn" data-index="${index}">
-            <i class="fas fa-image"></i>
-          </button>
-          <button class="page-btn draw-btn" data-index="${index}">
-            <i class="fas fa-paint-brush"></i>
-          </button>
-          <button class="page-btn clear-page-btn" data-index="${index}">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-      `;
-    } else {
-      pageElement.innerHTML = `
-        <div class="zine-page-text">
-          <h3>${page.content}</h3>
-        </div>
-        <div class="zine-page-buttons">
-          <button class="page-btn replace-image-btn" data-index="${index}">
-            <i class="fas fa-image"></i>
-          </button>
-          <button class="page-btn draw-btn" data-index="${index}">
-            <i class="fas fa-paint-brush"></i>
-          </button>
-          <button class="page-btn clear-page-btn" data-index="${index}">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-      `;
-    }
+    currentZine.pages.forEach((page, index) => {
+      const pageElement = createPageElement(index);
+      pagesGrid.appendChild(pageElement);
+    });
     
-    pagesGrid.appendChild(pageElement);
-  });
+    setupPageButtonListeners();
+  }
+
+function createPageElement(index) {
+  const page = currentZine.pages[index];
+  const pageElement = document.createElement('div');
+  pageElement.className = 'zine-page';
+  pageElement.style.margin = '0 10px';
   
-  // Add event listeners to page buttons
+  if (page.type === 'image') {
+    pageElement.innerHTML = `
+      <img src="${page.content}" alt="${getPageName(index)}">
+      <div class="zine-page-buttons">
+        <button class="page-btn replace-image-btn" data-index="${index}">
+          <i class="fas fa-image"></i>
+        </button>
+        <button class="page-btn draw-btn" data-index="${index}">
+          <i class="fas fa-paint-brush"></i>
+        </button>
+        <button class="page-btn clear-page-btn" data-index="${index}">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    `;
+  } else {
+    pageElement.innerHTML = `
+      <div class="zine-page-text">
+        ${page.content ? `<p>${page.content}</p>` : ''}
+      </div>
+      <div class="zine-page-buttons">
+        <button class="page-btn replace-image-btn" data-index="${index}">
+          <i class="fas fa-image"></i>
+        </button>
+        <button class="page-btn draw-btn" data-index="${index}">
+          <i class="fas fa-paint-brush"></i>
+        </button>
+        <button class="page-btn clear-page-btn" data-index="${index}">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    `;
+  }
+  
+  return pageElement;
+}
+
+function getPageName(index) {
+  if (index === 0) return 'Front Cover';
+  if (index === 15) return 'Back Cover';
+  return `Page ${index + 1}`;
+}
+
+function setupPageButtonListeners() {
+    showHelpBtn.addEventListener('click', () => {
+        helpModal.style.display = 'flex';
+      });
+      
+      closeHelpModalBtn.addEventListener('click', () => {
+        helpModal.style.display = 'none';
+      });
+      
+      closeHelpBtn.addEventListener('click', () => {
+        helpModal.style.display = 'none';
+      });
+      
+      // Close modal when clicking outside content
+      helpModal.addEventListener('click', (e) => {
+        if (e.target === helpModal) {
+          helpModal.style.display = 'none';
+        }
+      });
   document.querySelectorAll('.replace-image-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const index = parseInt(e.currentTarget.getAttribute('data-index'));
@@ -151,54 +188,18 @@ function renderPages() {
 // Setup event listeners
 function setupEventListeners() {
   // Export buttons
-  exportPdfBtn.addEventListener('click', exportToPDF);
-  exportOnePageBtn.addEventListener('click', exportToOnePage);
-  exportQuarterZineBtn.addEventListener('click', exportToQuarterZine);
+  if (exportPdfBtn) {
+    exportPdfBtn.addEventListener('click', exportToPDF);
+  }
   
-  // Help modal controls
-  showHelpBtn.addEventListener('click', () => {
-    helpModal.style.display = 'flex';
-  });
+  if (export16PanelBtn) {
+    export16PanelBtn.addEventListener('click', exportTo16PanelZine);
+  }
   
-  closeHelpModalBtn.addEventListener('click', () => {
-    helpModal.style.display = 'none';
-  });
-  
-  closeHelpBtn.addEventListener('click', () => {
-    helpModal.style.display = 'none';
-  });
-  
-  // Close modal when clicking outside content
-  helpModal.addEventListener('click', (e) => {
-    if (e.target === helpModal) {
-      helpModal.style.display = 'none';
-    }
-  });
-
-   // Second help modal controls
-   showHelpBtn2.addEventListener('click', () => {
-    helpModal2.style.display = 'flex';
-  });
-  
-  closeHelpModalBtn2.addEventListener('click', () => {
-    helpModal2.style.display = 'none';
-  });
-  
-  closeHelpBtn2.addEventListener('click', () => {
-    helpModal2.style.display = 'none';
-  });
-  
-  // Close modal when clicking outside content
-  helpModal2.addEventListener('click', (e) => {
-    if (e.target === helpModal2) {
-      helpModal2.style.display = 'none';
-    }
-  });
   
   // Drawing modal
   closeDrawingModalBtn.addEventListener('click', () => {
     if (confirm('Discard changes?')) {
-      // Restore original state from backup
       if (canvasBackup) {
         const img = new Image();
         img.onload = () => {
@@ -292,13 +293,13 @@ function startDrawing(index) {
   canvasBackup = drawingCanvas.toDataURL();
   
   // Initialize canvas with existing image if present
-  existingImage = page.type === 'image' ? page.content : null;
+  existingImage = page.type === 'image' ? page.content : undefined;
   initializeCanvas(existingImage);
   
   drawingModal.style.display = 'flex';
 }
 
-function initializeCanvas(imgSrc = null) {
+function initializeCanvas(imgSrc) {
   // Clear canvas
   canvasContext.fillStyle = '#FFFFFF';
   canvasContext.fillRect(0, 0, drawingCanvas.width, drawingCanvas.height);
@@ -603,7 +604,7 @@ function handleSaveDrawing() {
 }
 
 function clearPage(index) {
-  const defaultContent = defaultPages[index]?.content || `Page ${index + 1}`;
+  const defaultContent = defaultPages[index]?.content || getPageName(index);
   currentZine.pages[index] = new Page('text', defaultContent);
   renderPages();
 }
@@ -673,7 +674,7 @@ function exportToPDF() {
   });
 }
 
-function exportToQuarterZine() {
+function exportTo16PanelZine() {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm'
@@ -681,27 +682,25 @@ function exportToQuarterZine() {
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const quarterWidth = pageWidth / 2;
-  const quarterHeight = pageHeight / 2;
+  const panelWidth = pageWidth / 4;
+  const panelHeight = pageHeight / 4;
 
-  // Correct layout with 1-based indexing (pages 1-8)
-  const pageLayouts = [
-    // First page
-    [
-      [5, 4], // Top row
-      [8, 1]  // Bottom row
-    ],
-    // Second page
-    [
-      [3, 6], // Top row
-      [2, 7]  // Bottom row
-    ]
+  // Layout for 16-panel zine (1-based indexing)
+  const panelLayout = [
+    // First row (rotated 180°)
+    [15, 14, 13, 12],
+    // Second row (normal)
+    [16, 1, 10, 11],
+    // Third row (rotated 180°)
+    [3, 2, 9, 8],
+    // Fourth row (normal)
+    [4, 5, 6, 7]
   ];
 
-  // Create all page images (1-based index)
+  // Create all page images (1-16)
   const createPageImages = () => {
     return Promise.all(currentZine.pages.map((page, index) => {
-      const pageNumber = index + 1; // Convert to 1-based
+      const pageNumber = index + 1; // 1-based
       return new Promise((resolve) => {
         if (page.type === 'image') {
           const img = new Image();
@@ -724,7 +723,7 @@ function exportToQuarterZine() {
             ctx.font = '16px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(page.content || `Page ${pageNumber}`, canvas.width/2, canvas.height/2);
+            ctx.fillText(page.content || getPageName(index), canvas.width/2, canvas.height/2);
           }
           const img = new Image();
           img.onload = () => resolve({ 
@@ -738,170 +737,60 @@ function exportToQuarterZine() {
     }));
   };
 
-  // Process the layouts
+  // Process the layout
   createPageImages().then(pageImages => {
-    // Filter out any failed image loads
     const validPages = pageImages.filter(p => p !== null);
     
-    // Create each PDF page
-    pageLayouts.forEach((pageLayout, pageIndex) => {
-      if (pageIndex > 0) doc.addPage();
+    // Draw each panel
+    panelLayout.forEach((row, rowIndex) => {
+      const isRotatedRow = rowIndex % 2 === 0; // Rotate every other row
       
-      // Draw each quarter section
-      pageLayout.forEach((row, rowIndex) => {
-        row.forEach((targetPageNumber, colIndex) => {
-          const x = colIndex * quarterWidth;
-          const y = rowIndex * quarterHeight;
-          
-          const page = validPages.find(p => p.pageNumber === targetPageNumber);
-          if (page) {
-            // Stretch to fill quarter section exactly
+      row.forEach((targetPageNumber, colIndex) => {
+        const x = colIndex * panelWidth;
+        const y = rowIndex * panelHeight;
+        
+        const page = validPages.find(p => p.pageNumber === targetPageNumber);
+        if (page) {
+          if (isRotatedRow) {
+            // Create rotated canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = page.img.width;
+            canvas.height = page.img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width, canvas.height);
+            ctx.rotate(Math.PI);
+            ctx.drawImage(page.img, 0, 0);
+            doc.addImage(
+              canvas.toDataURL('image/jpeg'),
+              'JPEG',
+              x,
+              y,
+              panelWidth,
+              panelHeight
+            );
+          } else {
+            // Normal orientation
             doc.addImage(
               page.content,
               'JPEG',
               x,
               y,
-              quarterWidth,
-              quarterHeight
+              panelWidth,
+              panelHeight
             );
-          } else {
-            // Fallback if page failed to load
-            doc.setFillColor(255, 255, 255);
-            doc.rect(x, y, quarterWidth, quarterHeight, 'F');
-            doc.setTextColor(0, 0, 0);
-            doc.text(`Page ${targetPageNumber} missing`, x + 5, y + 15);
           }
-        });
-      });
-    });
-
-    doc.save(`${currentZine.title || 'zine'}-quarter.pdf`);
-  });
-}
-
-function exportToOnePage() {
-  const doc = new jsPDF({
-    orientation: 'landscape',
-    unit: 'mm'
-  });
-
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const contentWidth = pageWidth / 4;
-  const contentHeight = pageHeight / 2;
-
-  const pageLayout = [
-    [6, 5, 4, 3],
-    [7, 0, 1, 2]
-  ];
-
-  // Create all page images first
-  const createPageImages = () => {
-    return Promise.all(currentZine.pages.map((page, index) => {
-      return new Promise((resolve) => {
-        if (page.type === 'image') {
-          resolve({ type: 'image', content: page.content });
         } else {
-          const canvas = document.createElement('canvas');
-          canvas.width = 300;
-          canvas.height = 400;
-          const ctx = canvas.getContext('2d');
-          
-          if (ctx) {
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.fillStyle = '#000000';
-            ctx.font = '16px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            const text = page.content || `Page ${index + 1}`;
-            ctx.fillText(text, canvas.width/2, canvas.height/2);
-          }
-          
-          resolve({ 
-            type: 'image', 
-            content: canvas.toDataURL('image/jpeg') 
-          });
+          // Error placeholder
+          doc.setFillColor(255, 255, 255);
+          doc.rect(x, y, panelWidth, panelHeight, 'F');
+          doc.setTextColor(0, 0, 0);
+          doc.text(`Page ${targetPageNumber}`, x + 5, y + 15);
         }
       });
-    }));
-  };
-
-  // Process the layout
-  const processLayout = (pageImages) => {
-    doc.setFillColor(255, 255, 255);
-    doc.rect(0, 0, pageWidth, pageHeight, 'F');
-
-    const promises = [];
-
-    for (let row = 0; row < pageLayout.length; row++) {
-      for (let col = 0; col < pageLayout[row].length; col++) {
-        const pageIndex = pageLayout[row][col];
-        if (pageIndex >= pageImages.length) continue;
-
-        const x = col * contentWidth;
-        const y = row * contentHeight;
-        const page = pageImages[pageIndex];
-
-        promises.push(new Promise((resolve) => {
-          try {
-            if (row === 0) {
-              const img = new Image();
-              img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                  ctx.translate(canvas.width, canvas.height);
-                  ctx.rotate(Math.PI);
-                  ctx.drawImage(img, 0, 0);
-                  doc.addImage(
-                    canvas.toDataURL('image/jpeg'),
-                    'JPEG',
-                    x,
-                    y,
-                    contentWidth,
-                    contentHeight
-                  );
-                }
-                resolve();
-              };
-              img.src = page.content;
-            } else {
-              doc.addImage(
-                page.content,
-                'JPEG',
-                x,
-                y,
-                contentWidth,
-                contentHeight
-              );
-              resolve();
-            }
-          } catch (error) {
-            console.error('Error adding page:', error);
-            doc.setFillColor(255, 255, 255);
-            doc.rect(x, y, contentWidth, contentHeight, 'F');
-            doc.setTextColor(0, 0, 0);
-            doc.text('Error', x + 5, y + 10);
-            resolve();
-          }
-        }));
-      }
-    }
-
-    return Promise.all(promises);
-  };
-
-  // Execute the export
-  createPageImages()
-    .then(pageImages => processLayout(pageImages))
-    .then(() => {
-      doc.save(`${currentZine.title || 'zine'}-one-page.pdf`);
     });
+
+    doc.save(`${currentZine.title || 'zine'}-16panel.pdf`);
+  });
 }
 
 // Initialize the app when DOM is loaded

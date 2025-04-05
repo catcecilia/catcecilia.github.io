@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ZINE Creator</title>
-  <link rel="stylesheet" href="sixteen.css">
+  <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -24,29 +24,21 @@
     </div>
 
     <div class="editor-controls">
-      <button id="export-pdf" class="btn primary">
+      <button id="export-pdf" class="btn secondary">
         <i class="fas fa-download"></i> Export to PDF (Booklet)
       </button>
-      <button id="export-quarter-zine" class="btn secondary">
-        <i class="fas fa-download"></i> Export to Quarter Zine
+      <button id="export-16panel" class="btn tertiary">
+        <i class="fas fa-download"></i> Export to 16-Panel Zine
       </button>
-      <button id="export-one-page" class="btn tertiary">
-        <i class="fas fa-download"></i> Export to Mini Zine PDF (One-Page)
-      </button>
-      <a href="sixteen.html">
-        <button id="sixteen" class="btn">
-          Make a 16 Panel Zine
+      <a href="index.html">
+        <button id="eight" class="btn">
+          Make an 8 Panel Zine
         </button>
       </a>
       <a>
         <button id="show-help" class="btn">
-          <i class="fas fa-question-circle"></i> How to Fold Quarter Zine
-        </button>
-      </a>
-      <a>
-        <button id="show-help-2" class="btn">
-          <i class="fas fa-question-circle"></i> How to Fold Mini Zine
-        </button>
+            <i class="fas fa-question-circle"></i> How to fold 16-Panel Zine
+          </button>
       </a>
     </div>
 
@@ -95,38 +87,22 @@
     </div>
     <!-- Help Image Modal -->
     <div id="help-modal" class="modal">
-      <div class="modal-content small">
+        <div class="modal-content small">
         <div class="modal-header">
-          <h2>How to Fold a Quarter Zine</h2>
-          <button id="close-help-modal" class="close-btn">&times;</button>
+            <h2>How to fold 16-Panel Zine</h2>
+            <button id="close-help-modal" class="close-btn">&times;</button>
         </div>
         <div class="modal-body">
-          <img src="HOW_TO_FOLD_A_QUARTER_ZINE.png" alt="Zine layout instructions for quarter zine" style="width: 100%;">
+            <img src="HOW_TO_FOLD_16PAGE.png" alt="Zine layout instructions for 16 page zine" style="width: 100%;">
         </div>
         <div class="modal-footer">
-          <button id="close-help-btn" class="btn primary">Close</button>
+            <button id="close-help-btn" class="btn primary">Close</button>
         </div>
-      </div>
-    </div>
-
-    <!-- Second Help Image Modal -->
-    <div id="help-modal-2" class="modal">
-      <div class="modal-content small">
-        <div class="modal-header">
-          <h2>How to Fold a Mini Zine</h2>
-          <button id="close-help-modal-2" class="close-btn">&times;</button>
         </div>
-        <div class="modal-body">
-          <img src="HOW_TO_FOLD_MINI_ZINE.png" alt="Zine layout instructions for mini zine" style="width: 100%;">
-        </div>
-        <div class="modal-footer">
-          <button id="close-help-btn-2" class="btn primary">Close</button>
-        </div>
-      </div>
     </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="script.js"></script>
+  <script src="sixteen.js"></script>
 </body>
 </html>
