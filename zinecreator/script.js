@@ -714,8 +714,8 @@ function exportToQuarterZine() {
           img.src = page.content;
         } else {
           const canvas = document.createElement('canvas');
-          canvas.width = 300;
-          canvas.height = 400;
+          canvas.width = 371.25;
+          canvas.height = 525;
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.fillStyle = '#FFFFFF';
@@ -803,8 +803,8 @@ function exportToOnePage() {
           resolve({ type: 'image', content: page.content });
         } else {
           const canvas = document.createElement('canvas');
-          canvas.width = 300;
-          canvas.height = 400;
+          canvas.width = 371.25;
+          canvas.height = 525;
           const ctx = canvas.getContext('2d');
           
           if (ctx) {
