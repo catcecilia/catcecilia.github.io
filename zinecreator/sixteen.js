@@ -684,8 +684,6 @@ function exportTo16PanelZine() {
   const pageHeight = doc.internal.pageSize.getHeight();
   const panelWidth = pageWidth / 4;
   const panelHeight = pageHeight / 4;
-  console.log(JSON.stringify(panelWidth));
-  console.log(JSON.stringify(panelHeight));
 
   // Layout for 16-panel zine (1-based indexing)
   const panelLayout = [
