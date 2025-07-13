@@ -137,7 +137,7 @@ async function fetchCardPrice(message) {
 async function fetchHighestCardInSet(setCode) {
   try {
     const query = `e:${setCode.toLowerCase()}`;
-    const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&order=usd&dir=desc&unique=prints`;
+    const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&order=usd&dir=desc`;
 
     const res = await fetch(url);
     const data = await res.json();
