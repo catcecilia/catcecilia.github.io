@@ -1,0 +1,163 @@
+/* Theme Colors */
+:root {
+  --bg-color: #1f1f1f;
+  --text-color: #f0f0f0;
+  --box-color: #2a2a2a;
+  --input-bg: #333;
+  --input-text: #fff;
+  --user-color: #8fd4ff;
+  --bot-color: #afffaf;
+}
+
+body.light-mode {
+  --bg-color: #f0f0f0;
+  --text-color: #1f1f1f;
+  --box-color: #ffffff;
+  --input-bg: #eaeaea;
+  --input-text: #000;
+  --user-color: #004080;
+  --bot-color: #006600;
+}
+
+body {
+  font-family: sans-serif;
+  background: var(--bg-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* Chat UI */
+#chat-container {
+  width: 100%;
+  max-width: 600px;
+  background: var(--box-color);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 90vh;
+}
+
+#chat-box {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.message {
+  margin-bottom: 12px;
+  white-space: pre-line;
+}
+
+.user {
+  text-align: right;
+  color: var(--user-color);
+}
+
+.bot {
+  text-align: left;
+  color: var(--bot-color);
+}
+
+#input-area {
+  display: flex;
+  border-top: 1px solid #444;
+}
+
+#user-input {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: var(--input-bg);
+  color: var(--input-text);
+}
+
+button {
+  background: #444;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #555;
+}
+
+/* Hamburger and Menu */
+.menu-wrapper {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+}
+
+.hamburger {
+  font-size: 24px;
+  cursor: pointer;
+  background: #333;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 5px;
+}
+
+.side-menu {
+  display: none;
+  position: absolute;
+  top: 45px;
+  left: 10px;
+  width: 280px;
+  background: #222;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 15px;
+  color: #fff;
+  font-size: 14px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+body.light-mode .side-menu {
+  background: #f8f8f8;
+  color: #000;
+  border: 1px solid #ccc;
+}
+
+.side-menu h2 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+.side-menu ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.side-menu ul li {
+  margin-bottom: 8px;
+}
+
+.side-menu code {
+  background: #444;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+body.light-mode .side-menu code {
+  background: #ddd;
+}
+
+.side-menu a {
+  color: #8fd4ff;
+  text-decoration: none;
+}
+
+.side-menu a:hover {
+  text-decoration: underline;
+}
