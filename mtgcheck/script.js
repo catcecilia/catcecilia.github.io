@@ -23,7 +23,12 @@ async function handleUserInput() {
       return;
     }
     fetchHighestCardInSet(setCode);
-  } else {
+  } else if (/^highest cards? in (.+)$/i.test(message)) {
+  const setCode = message.match(/^highest cards? in (.+)$/i)[1].trim();
+  fetchTopCardsInSet(setCode);
+  return;
+}
+  else {
     addMessage("bot", "🧠 Try prompts like:\n• Price of Black Lotus\n• Highest card in MH2");
   }
 }
@@ -221,6 +226,73 @@ async function fetchHighestCardInSet(setCode) {
     removeLoadingMessage(); // 👈 hide spinner on error
     console.error(err);
     addMessage("bot", `⚠️ Error fetching highest card. Try again later.`);
+  }
+}
+
+async function fetchTopCardsInSet(setCode, count = 5) {
+  addLoadingMessage();
+  try {
+    const query = `e:${setCode.toLowerCase()}`;
+    const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&unique=prints`;
+    let res = await fetch(url);
+    let data = await res.json();
+
+    if (!data || !data.data || data.data.length === 0) {
+      removeLoadingMessage();
+      addMessage("bot", `❌ Could not find cards in set "${setCode}".`);
+      return;
+    }
+
+    let cards = data.data;
+    let nextPage = data.has_more ? data.next_page : null;
+
+    while (nextPage) {
+      const moreRes = await fetch(nextPage);
+      const moreData = await moreRes.json();
+      cards = cards.concat(moreData.data);
+      nextPage = moreData.has_more ? moreData.next_page : null;
+    }
+
+    // Find top N cards by max individual print price
+    const scoredCards = cards
+      .map(card => {
+        const prices = [card.prices.usd, card.prices.usd_foil, card.prices.usd_etched]
+          .map(p => parseFloat(p))
+          .filter(p => !isNaN(p));
+        const maxPrice = Math.max(...prices, 0);
+        return { card, maxPrice };
+      })
+      .filter(entry => entry.maxPrice > 0)
+      .sort((a, b) => b.maxPrice - a.maxPrice)
+      .slice(0, count);
+
+    removeLoadingMessage();
+
+    if (scoredCards.length === 0) {
+      addMessage("bot", `⚠️ No cards with valid prices found in set "${setCode}".`);
+      return;
+    }
+
+    for (const { card, maxPrice } of scoredCards) {
+      const imageUrl =
+        card.image_uris?.normal ||
+        card.card_faces?.[0]?.image_uris?.normal ||
+        null;
+
+      const finishes = card.finishes?.join(", ") || "normal";
+      const prices = [];
+      if (card.prices.usd) prices.push(`💵 USD: $${card.prices.usd}`);
+      if (card.prices.usd_foil) prices.push(`✨ Foil: $${card.prices.usd_foil}`);
+      if (card.prices.usd_etched) prices.push(`🪞 Etched: $${card.prices.usd_etched}`);
+
+      const msg = `💎 "${card.name}" from ${card.set_name}\nFinish: ${finishes}\n${prices.join("\n")}`;
+      addMessage("bot", msg, imageUrl);
+    }
+
+  } catch (err) {
+    removeLoadingMessage();
+    console.error(err);
+    addMessage("bot", `⚠️ Error fetching top cards. Try again later.`);
   }
 }
 
