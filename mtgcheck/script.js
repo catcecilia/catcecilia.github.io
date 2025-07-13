@@ -55,24 +55,37 @@ function addMessage(sender, text, imageUrl = null) {
 // Fetch multiple printings + price variants of a card
 async function fetchCardPrice(message) {
   try {
-    // Try to extract card name and optional set using loose pattern
-    const match = message.match(/price of (.+?)(?: in (.+))?$/i);
-    const cardName = match?.[1]?.trim();
-    const setInput = match?.[2]?.trim();
+    // Make message lowercase for checking intent
+    const lowerMessage = message.toLowerCase();
 
-    if (!cardName) {
-      addMessage("bot", "⚠️ Please include a card name, like 'Price of Black Lotus'.");
+    // Strip out "price of" if it exists
+    let cleaned = lowerMessage.startsWith("price of")
+      ? message.slice(8).trim()
+      : message.trim();
+
+    if (!cleaned) {
+      addMessage("bot", "⚠️ Please include a card name.");
       return;
     }
 
-    let query = `!"${cardName}"`;
+    // Attempt to detect "in [set]" structure
+    let cardName = cleaned;
+    let setInput = null;
 
+    if (cleaned.includes(" in ")) {
+      const parts = cleaned.split(" in ");
+      cardName = parts[0].trim();
+      setInput = parts[1].trim();
+    }
+
+    // Build Scryfall query
+    let query = `!"${cardName}"`;
     if (setInput) {
-      // If it looks like a set code (≤5 letters/digits), assume it's a code
       if (/^[a-z0-9]{2,5}$/i.test(setInput)) {
+        // Looks like a set code (e.g. mh2, bro, neo)
         query += ` set:${setInput.toLowerCase()}`;
       } else {
-        // Otherwise treat it as part of a full-text name search
+        // Treat as fuzzy set name (e.g. Commander Masters)
         query += ` "${setInput}"`;
       }
     }
@@ -86,7 +99,7 @@ async function fetchCardPrice(message) {
       return;
     }
 
-    const cards = data.data.slice(0, 6);
+    const cards = data.data.slice(0, 6); // Show top 6 printings
 
     for (const card of cards) {
       const imageUrl =
