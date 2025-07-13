@@ -55,27 +55,30 @@ function addMessage(sender, text, imageUrl = null) {
 // Fetch multiple printings + price variants of a card
 async function fetchCardPrice(message) {
   try {
+    // Try to extract card name and optional set using loose pattern
     const match = message.match(/price of (.+?)(?: in (.+))?$/i);
-    if (!match) {
-      addMessage("bot", "⚠️ Please format as 'Price of CARD' or 'Price of CARD in SET'.");
+    const cardName = match?.[1]?.trim();
+    const setInput = match?.[2]?.trim();
+
+    if (!cardName) {
+      addMessage("bot", "⚠️ Please include a card name, like 'Price of Black Lotus'.");
       return;
     }
 
-    const cardName = match[1].trim();
-    const setInput = match[2]?.trim();
-
     let query = `!"${cardName}"`;
+
     if (setInput) {
-      // Try using set code as-is (e.g. mh2, bro)
-      if (setInput.length <= 5 && /^[a-z0-9]+$/i.test(setInput)) {
-        query += ` set:${setInput}`;
+      // If it looks like a set code (≤5 letters/digits), assume it's a code
+      if (/^[a-z0-9]{2,5}$/i.test(setInput)) {
+        query += ` set:${setInput.toLowerCase()}`;
       } else {
-        // Fall back to fuzzy set name filtering using `set_name` (not perfect, but helpful)
+        // Otherwise treat it as part of a full-text name search
         query += ` "${setInput}"`;
       }
     }
 
-    const res = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd`);
+    const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd`;
+    const res = await fetch(url);
     const data = await res.json();
 
     if (!data || !data.data || data.data.length === 0) {
