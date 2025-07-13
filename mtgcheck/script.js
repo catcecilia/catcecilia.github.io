@@ -52,32 +52,50 @@ function addMessage(sender, text, imageUrl = null) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Fetch card price by name from Scryfall
+// Fetch multiple printings + price variants of a card
 async function fetchCardPrice(name) {
   try {
-    const res = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`);
-    const card = await res.json();
+    // Search all versions of the card, sorted by USD value
+    const res = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(name)}&unique=prints&order=usd`);
+    const data = await res.json();
 
-    if (card.object === "error") {
-      addMessage("bot", `❌ Could not find a card named "${name}".`);
+    if (!data || !data.data || data.data.length === 0) {
+      addMessage("bot", `❌ No card found for "${name}".`);
       return;
     }
 
-    const price = card.prices.usd || "Not available";
-    const type = card.type_line || "Unknown";
-    const imageUrl =
-      card.image_uris?.normal ||
-      card.card_faces?.[0]?.image_uris?.normal ||
-      null;
+    const cards = data.data.slice(0, 6); // limit to top 6 variants for performance
 
-    addMessage(
-      "bot",
-      `💳 "${card.name}" is a ${type} from ${card.set_name}.\nCurrent USD price: $${price}`,
-      imageUrl
-    );
+    for (const card of cards) {
+      const imageUrl =
+        card.image_uris?.normal ||
+        card.card_faces?.[0]?.image_uris?.normal ||
+        null;
+
+      const finishes = card.finishes?.join(", ") || "normal";
+
+      const prices = [];
+      if (card.prices.usd) prices.push(`💵 USD: $${card.prices.usd}`);
+      if (card.prices.usd_foil) prices.push(`✨ Foil: $${card.prices.usd_foil}`);
+      if (card.prices.usd_etched) prices.push(`🪞 Etched: $${card.prices.usd_etched}`);
+
+      const type = card.type_line || "Unknown Type";
+      const variationLabel = card.promo ? "Promo" :
+                             card.full_art ? "Full Art" :
+                             card.border_color === "borderless" ? "Borderless" :
+                             "Standard";
+
+      const message = `🃏 "${card.name}" from ${card.set_name} (${variationLabel})\n${type}\nFinish: ${finishes}\n${prices.join("\n")}`;
+      addMessage("bot", message, imageUrl);
+    }
+
+    if (cards.length === 6) {
+      addMessage("bot", "⚠️ Showing top 6 price variations. Try narrowing your query (e.g. add set code or 'foil').");
+    }
+
   } catch (err) {
     console.error(err);
-    addMessage("bot", `⚠️ Error fetching card price. Please try again.`);
+    addMessage("bot", `⚠️ Error fetching card data.`);
   }
 }
 
@@ -100,18 +118,22 @@ async function fetchHighestCardInSet(setCode) {
       card.card_faces?.[0]?.image_uris?.normal ||
       null;
 
-    addMessage(
-      "bot",
-      `🏆 Highest value card in "${card.set_name}":\n"${card.name}" (${type}) - $${price}`,
-      imageUrl
-    );
+    const finishes = card.finishes?.join(", ") || "normal";
+    const priceLines = [];
+    if (card.prices.usd) priceLines.push(`💵 USD: $${card.prices.usd}`);
+    if (card.prices.usd_foil) priceLines.push(`✨ Foil: $${card.prices.usd_foil}`);
+    if (card.prices.usd_etched) priceLines.push(`🪞 Etched: $${card.prices.usd_etched}`);
+
+    const message = `🏆 Highest value card in "${card.set_name}":\n"${card.name}" (${type})\nFinish: ${finishes}\n${priceLines.join("\n")}`;
+    addMessage("bot", message, imageUrl);
+
   } catch (err) {
     console.error(err);
     addMessage("bot", `⚠️ Error fetching set data. Please try again.`);
   }
 }
 
-// Toggle hamburger menu
+// Toggle the side menu
 function toggleMenu() {
   const menu = document.getElementById("side-menu");
   menu.style.display = menu.style.display === "block" ? "none" : "block";
