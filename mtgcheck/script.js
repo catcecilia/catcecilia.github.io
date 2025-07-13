@@ -27,6 +27,28 @@ async function handleUserInput() {
     addMessage("bot", "🧠 Try prompts like:\n• Price of Black Lotus\n• Highest card in MH2");
   }
 }
+function addLoadingMessage(id = "loading") {
+  const chatBox = document.getElementById("chat-box");
+  const loadingDiv = document.createElement("div");
+  loadingDiv.className = "message bot loading";
+  loadingDiv.id = id;
+
+  const loadingText = document.createElement("div");
+  loadingText.textContent = "Fetching data...";
+  loadingDiv.appendChild(loadingText);
+
+  const spinner = document.createElement("div");
+  spinner.className = "spinner";
+  loadingDiv.appendChild(spinner);
+
+  chatBox.appendChild(loadingDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function removeLoadingMessage(id = "loading") {
+  const loadingDiv = document.getElementById(id);
+  if (loadingDiv) loadingDiv.remove();
+}
 
 // Add a message to the chat box
 function addMessage(sender, text, imageUrl = null) {
@@ -135,6 +157,7 @@ async function fetchCardPrice(message) {
 
 // Fetch the highest value card in a given set
 async function fetchHighestCardInSet(setCode) {
+  addLoadingMessage(); // 👈 show spinner
   try {
     const query = `e:${setCode.toLowerCase()}`;
     const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&unique=prints`;
@@ -142,6 +165,7 @@ async function fetchHighestCardInSet(setCode) {
     let data = await res.json();
 
     if (!data || !data.data || data.data.length === 0) {
+      removeLoadingMessage();
       addMessage("bot", `❌ Could not find cards in set "${setCode}".`);
       return;
     }
@@ -149,7 +173,6 @@ async function fetchHighestCardInSet(setCode) {
     let cards = data.data;
     let nextPage = data.has_more ? data.next_page : null;
 
-    // If there are multiple pages of results, load them all
     while (nextPage) {
       const moreRes = await fetch(nextPage);
       const moreData = await moreRes.json();
@@ -166,12 +189,13 @@ async function fetchHighestCardInSet(setCode) {
         .filter(p => !isNaN(p));
 
       const maxCardPrice = Math.max(...prices, 0);
-
       if (maxCardPrice > highestPrice) {
         highestPrice = maxCardPrice;
         highestCard = card;
       }
     }
+
+    removeLoadingMessage(); // 👈 hide spinner
 
     if (!highestCard) {
       addMessage("bot", `⚠️ No cards with valid prices in "${setCode}".`);
@@ -194,6 +218,7 @@ async function fetchHighestCardInSet(setCode) {
     addMessage("bot", msg, imageUrl);
 
   } catch (err) {
+    removeLoadingMessage(); // 👈 hide spinner on error
     console.error(err);
     addMessage("bot", `⚠️ Error fetching highest card. Try again later.`);
   }
