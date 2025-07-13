@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MTG Chat - Scryfall Helper</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Hamburger Menu -->
+  <div class="menu-wrapper">
+    <div class="hamburger" onclick="toggleMenu()">☰</div>
+    <div class="side-menu" id="side-menu">
+      <h2>Scryfall Search Guide</h2>
+      <ul>
+        <li><strong>e:</strong> Set code (<code>e:mh2</code>)</li>
+        <li><strong>r:</strong> Rarity (<code>r:m</code> = mythic)</li>
+        <li><strong>is:fullart</strong> – Full-art cards</li>
+        <li><strong>is:borderless</strong> – Borderless frame</li>
+        <li><strong>is:promo</strong> – Promo versions</li>
+        <li><strong>is:foil</strong> – Foil only</li>
+        <li><strong>t:creature</strong> – Card type</li>
+        <li><strong>cmc=3</strong> – Mana value (converted mana cost)</li>
+      </ul>
+
+      <h2>Chat Examples</h2>
+      <ul>
+        <li><code>Price of Black Lotus</code></li>
+        <li><code>Highest card in MH2</code></li>
+        <li><code>Price of Sheoldred, the Apocalypse</code></li>
+      </ul>
+
+      <h2>UI Settings</h2>
+      <button onclick="toggleTheme()" id="theme-toggle">Switch to Light Mode</button>
+
+      <p style="margin-top:10px;">More at <a href="https://scryfall.com/docs/syntax" target="_blank">Scryfall Docs</a></p>
+    </div>
+  </div>
+
+  <!-- Chat UI -->
+  <div id="chat-container">
+    <div id="chat-box"></div>
+    <div id="input-area">
+      <input id="user-input" type="text" placeholder="Ask a card price or highest card in a set..." />
+      <button onclick="handleUserInput()">Send</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
