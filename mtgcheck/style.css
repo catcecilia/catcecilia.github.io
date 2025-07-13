@@ -184,3 +184,25 @@ body.light-mode .side-menu code {
 .side-menu a:hover {
   text-decoration: underline;
 }
+
+/* Spinner Message */
+.message.bot.loading {
+  display: flex;
+  align-items: center;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top: 3px solid #00c2ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
