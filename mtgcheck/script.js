@@ -136,34 +136,49 @@ async function fetchCardPrice(message) {
 // Fetch the highest value card in a given set
 async function fetchHighestCardInSet(setCode) {
   try {
-    const res = await fetch(`https://api.scryfall.com/cards/search?q=e%3A${setCode}&order=usd&dir=desc`);
+    const query = `e:${setCode.toLowerCase()}`;
+    const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&order=usd&dir=desc&unique=prints`;
+
+    const res = await fetch(url);
     const data = await res.json();
 
-    const card = data.data?.[0];
-    if (!card) {
-      addMessage("bot", `❌ Could not find any cards for set code "${setCode}".`);
+    if (!data || !data.data || data.data.length === 0) {
+      addMessage("bot", `❌ Could not find cards in set "${setCode}". Make sure it's a valid set code.`);
       return;
     }
 
-    const price = card.prices.usd || "Not available";
-    const type = card.type_line || "Unknown";
+    const topCard = data.data.find(card =>
+      card.prices.usd || card.prices.usd_foil || card.prices.usd_etched
+    );
+
+    if (!topCard) {
+      addMessage("bot", `⚠️ No card with a known USD price found in set "${setCode}".`);
+      return;
+    }
+
     const imageUrl =
-      card.image_uris?.normal ||
-      card.card_faces?.[0]?.image_uris?.normal ||
+      topCard.image_uris?.normal ||
+      topCard.card_faces?.[0]?.image_uris?.normal ||
       null;
 
-    const finishes = card.finishes?.join(", ") || "normal";
-    const priceLines = [];
-    if (card.prices.usd) priceLines.push(`💵 USD: $${card.prices.usd}`);
-    if (card.prices.usd_foil) priceLines.push(`✨ Foil: $${card.prices.usd_foil}`);
-    if (card.prices.usd_etched) priceLines.push(`🪞 Etched: $${card.prices.usd_etched}`);
+    const finishes = topCard.finishes?.join(", ") || "normal";
+    const prices = [];
+    if (topCard.prices.usd) prices.push(`💵 USD: $${topCard.prices.usd}`);
+    if (topCard.prices.usd_foil) prices.push(`✨ Foil: $${topCard.prices.usd_foil}`);
+    if (topCard.prices.usd_etched) prices.push(`🪞 Etched: $${topCard.prices.usd_etched}`);
 
-    const message = `🏆 Highest value card in "${card.set_name}":\n"${card.name}" (${type})\nFinish: ${finishes}\n${priceLines.join("\n")}`;
-    addMessage("bot", message, imageUrl);
+    const type = topCard.type_line || "Unknown";
+    const label = topCard.promo ? "Promo" :
+      topCard.full_art ? "Full Art" :
+      topCard.border_color === "borderless" ? "Borderless" :
+      "Standard";
+
+    const msg = `🏆 Highest value card in "${topCard.set_name}"\n"${topCard.name}" (${type}, ${label})\nFinish: ${finishes}\n${prices.join("\n")}`;
+    addMessage("bot", msg, imageUrl);
 
   } catch (err) {
     console.error(err);
-    addMessage("bot", `⚠️ Error fetching set data. Please try again.`);
+    addMessage("bot", `⚠️ Error fetching highest value card. Try again later.`);
   }
 }
 
