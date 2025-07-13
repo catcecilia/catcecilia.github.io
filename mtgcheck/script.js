@@ -55,29 +55,35 @@ function addMessage(sender, text, imageUrl = null) {
 // Fetch multiple printings + price variants of a card
 async function fetchCardPrice(message) {
   try {
-    // Extract "price of [card name] in [set]" using regex
-    const match = message.match(/price of (.+?)(?: in ([a-zA-Z0-9\-]+))?$/i);
+    const match = message.match(/price of (.+?)(?: in (.+))?$/i);
     if (!match) {
       addMessage("bot", "⚠️ Please format as 'Price of CARD' or 'Price of CARD in SET'.");
       return;
     }
 
     const cardName = match[1].trim();
-    const setCode = match[2]?.trim().toLowerCase(); // optional
+    const setInput = match[2]?.trim();
 
-    // Build Scryfall query
     let query = `!"${cardName}"`;
-    if (setCode) query += ` set:${setCode}`;
+    if (setInput) {
+      // Try using set code as-is (e.g. mh2, bro)
+      if (setInput.length <= 5 && /^[a-z0-9]+$/i.test(setInput)) {
+        query += ` set:${setInput}`;
+      } else {
+        // Fall back to fuzzy set name filtering using `set_name` (not perfect, but helpful)
+        query += ` "${setInput}"`;
+      }
+    }
 
     const res = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd`);
     const data = await res.json();
 
     if (!data || !data.data || data.data.length === 0) {
-      addMessage("bot", `❌ No results for "${cardName}"${setCode ? ` in set "${setCode}"` : ""}.`);
+      addMessage("bot", `❌ No results for "${cardName}"${setInput ? ` in "${setInput}"` : ""}.`);
       return;
     }
 
-    const cards = data.data.slice(0, 6); // top 6 variations
+    const cards = data.data.slice(0, 6);
 
     for (const card of cards) {
       const imageUrl =
@@ -86,7 +92,6 @@ async function fetchCardPrice(message) {
         null;
 
       const finishes = card.finishes?.join(", ") || "normal";
-
       const prices = [];
       if (card.prices.usd) prices.push(`💵 USD: $${card.prices.usd}`);
       if (card.prices.usd_foil) prices.push(`✨ Foil: $${card.prices.usd_foil}`);
@@ -98,12 +103,12 @@ async function fetchCardPrice(message) {
         card.border_color === "borderless" ? "Borderless" :
         "Standard";
 
-      const message = `🃏 "${card.name}" from ${card.set_name} (${variationLabel})\n${type}\nFinish: ${finishes}\n${prices.join("\n")}`;
-      addMessage("bot", message, imageUrl);
+      const msg = `🃏 "${card.name}" from ${card.set_name} (${variationLabel})\n${type}\nFinish: ${finishes}\n${prices.join("\n")}`;
+      addMessage("bot", msg, imageUrl);
     }
 
     if (cards.length === 6) {
-      addMessage("bot", "⚠️ Showing top 6 price variations. Try narrowing your query.");
+      addMessage("bot", "⚠️ Showing top 6 results. Try narrowing your query.");
     }
 
   } catch (err) {
