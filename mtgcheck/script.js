@@ -53,18 +53,31 @@ function addMessage(sender, text, imageUrl = null) {
 }
 
 // Fetch multiple printings + price variants of a card
-async function fetchCardPrice(name) {
+async function fetchCardPrice(message) {
   try {
-    // Search all versions of the card, sorted by USD value
-    const res = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(name)}&unique=prints&order=usd`);
-    const data = await res.json();
-
-    if (!data || !data.data || data.data.length === 0) {
-      addMessage("bot", `❌ No card found for "${name}".`);
+    // Extract "price of [card name] in [set]" using regex
+    const match = message.match(/price of (.+?)(?: in ([a-zA-Z0-9\-]+))?$/i);
+    if (!match) {
+      addMessage("bot", "⚠️ Please format as 'Price of CARD' or 'Price of CARD in SET'.");
       return;
     }
 
-    const cards = data.data.slice(0, 6); // limit to top 6 variants for performance
+    const cardName = match[1].trim();
+    const setCode = match[2]?.trim().toLowerCase(); // optional
+
+    // Build Scryfall query
+    let query = `!"${cardName}"`;
+    if (setCode) query += ` set:${setCode}`;
+
+    const res = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd`);
+    const data = await res.json();
+
+    if (!data || !data.data || data.data.length === 0) {
+      addMessage("bot", `❌ No results for "${cardName}"${setCode ? ` in set "${setCode}"` : ""}.`);
+      return;
+    }
+
+    const cards = data.data.slice(0, 6); // top 6 variations
 
     for (const card of cards) {
       const imageUrl =
@@ -81,16 +94,16 @@ async function fetchCardPrice(name) {
 
       const type = card.type_line || "Unknown Type";
       const variationLabel = card.promo ? "Promo" :
-                             card.full_art ? "Full Art" :
-                             card.border_color === "borderless" ? "Borderless" :
-                             "Standard";
+        card.full_art ? "Full Art" :
+        card.border_color === "borderless" ? "Borderless" :
+        "Standard";
 
       const message = `🃏 "${card.name}" from ${card.set_name} (${variationLabel})\n${type}\nFinish: ${finishes}\n${prices.join("\n")}`;
       addMessage("bot", message, imageUrl);
     }
 
     if (cards.length === 6) {
-      addMessage("bot", "⚠️ Showing top 6 price variations. Try narrowing your query (e.g. add set code or 'foil').");
+      addMessage("bot", "⚠️ Showing top 6 price variations. Try narrowing your query.");
     }
 
   } catch (err) {
