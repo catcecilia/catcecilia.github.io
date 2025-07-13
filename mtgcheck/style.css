@@ -19,20 +19,20 @@ body.light-mode {
   --bot-color: #006600;
 }
 
+/* Base Page Layout */
 body {
   font-family: sans-serif;
   background: var(--bg-color);
   color: var(--text-color);
   margin: 0;
-  padding: 0;
+  padding: 0 10px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
   height: 100vh;
   transition: background 0.3s, color 0.3s;
 }
 
-/* Chat UI */
 #chat-container {
   width: 100%;
   max-width: 600px;
@@ -42,16 +42,19 @@ body {
   display: flex;
   flex-direction: column;
   height: 90vh;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 }
 
+/* Chat Display Area */
 #chat-box {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+  height: 100%;
 }
 
 .message {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   white-space: pre-line;
 }
 
@@ -65,9 +68,23 @@ body {
   color: var(--bot-color);
 }
 
+.message img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-top: 10px;
+  border-radius: 6px;
+  border: 1px solid #666;
+}
+
+/* Input Area */
 #input-area {
   display: flex;
+  flex-direction: row;
+  padding: 10px;
   border-top: 1px solid #444;
+  background: var(--box-color);
+  gap: 6px;
 }
 
 #user-input {
@@ -76,26 +93,30 @@ body {
   border: none;
   background: var(--input-bg);
   color: var(--input-text);
+  font-size: 1rem;
+  border-radius: 5px;
 }
 
 button {
   background: #444;
   color: white;
   border: none;
-  padding: 12px 20px;
+  padding: 12px 16px;
+  font-size: 1rem;
   cursor: pointer;
+  border-radius: 5px;
 }
 
 button:hover {
   background: #555;
 }
 
-/* Hamburger and Menu */
+/* Hamburger Menu */
 .menu-wrapper {
   position: absolute;
   top: 10px;
   left: 10px;
-  z-index: 10;
+  z-index: 100;
 }
 
 .hamburger {
@@ -110,23 +131,25 @@ button:hover {
 .side-menu {
   display: none;
   position: absolute;
-  top: 45px;
+  top: 50px;
   left: 10px;
   width: 280px;
+  max-height: 80vh;
+  overflow-y: auto;
   background: #222;
   border: 1px solid #444;
   border-radius: 8px;
   padding: 15px;
   color: #fff;
   font-size: 14px;
-  max-height: 80vh;
-  overflow-y: auto;
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 body.light-mode .side-menu {
   background: #f8f8f8;
   color: #000;
   border: 1px solid #ccc;
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .side-menu h2 {
@@ -160,12 +183,4 @@ body.light-mode .side-menu code {
 
 .side-menu a:hover {
   text-decoration: underline;
-}
-
-.message img {
-  display: block;
-  max-width: 100%;
-  margin-top: 10px;
-  border: 1px solid #666;
-  border-radius: 8px;
 }
