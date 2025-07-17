@@ -12,8 +12,8 @@ video {
   border-radius: 10px;
 }
 
-video:nth-of-type(n+2) {
-    display: none;
+video:not([id]) {
+  display: none;
 }
 
 #countdown {
