@@ -1,57 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Photo Booth Strip</title>
+  <meta charset="UTF-8" />
+  <title>Photo Booth</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: sans-serif;
-      text-align: center;
-      background: #fafafa;
+      background: #f0f0f0;
       padding: 20px;
+      margin: 0;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.8rem;
     }
 
     video {
-      width: 300px;
-      border: 2px solid black;
-      height: auto;
+      width: 100%;
+      max-width: 360px;
+      aspect-ratio: 3 / 4;
+      background: #000;
       border-radius: 10px;
-      background: black;
     }
 
     #countdown {
-      font-size: 80px;
+      font-size: 60px;
       color: red;
       margin: 10px 0;
     }
 
     button, select {
-      margin-top: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
+      margin: 10px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #ddd;
     }
 
     canvas {
       display: none;
     }
+
+    label {
+      display: block;
+      margin-top: 15px;
+    }
   </style>
 </head>
 <body>
-  <h1>📸 Photo Booth</h1>
+  <h1>📸 Mobile Photo Booth</h1>
 
-  <video id="video" autoplay></video>
+  <video id="video" autoplay playsinline muted></video>
   <div id="countdown"></div>
 
-  <div>
-    <label for="overlaySelect">Choose Template:</label>
-    <select id="overlaySelect">
-      <option value="overlays/none.png">None</option>
-      <option value="overlays/strip-template.png">Strip Template</option>
-    </select>
-  </div>
+  <label for="overlaySelect">Choose Template:</label>
+  <select id="overlaySelect">
+    <option value="overlays/none.png">None</option>
+    <option value="overlays/strip-template.png">Strip Template</option>
+  </select>
 
-  <button id="takePhotos">Take Photo Strip</button>
-  <button id="printButton" style="display:none;">Print 2 Copies</button>
+  <div>
+    <button id="takePhotos">📷 Take Strip</button>
+    <button id="printButton" style="display:none;">🖨️ Print 2 Copies</button>
+  </div>
 
   <canvas id="photoCanvas" width="600" height="1800"></canvas>
   <canvas id="printCanvas" width="1200" height="1800"></canvas>
@@ -73,15 +95,35 @@
     const STRIP_HEIGHT = 1800;
     const SLOT_HEIGHT = 400;
 
-    navigator.mediaDevices.getUserMedia({ video: true })
-  .then(stream => {
-    video.srcObject = stream;
-    video.play();
-  })
-  .catch(err => {
-    alert('Error accessing camera: ' + err.message);
-    console.error(err);
-  });
+    async function initCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'user', // front camera
+            width: { ideal: 720 },
+            height: { ideal: 960 }
+          },
+          audio: false
+        });
+        video.srcObject = stream;
+      } catch (err) {
+        alert('Camera access denied or unavailable.');
+        console.error(err);
+      }
+    }
+
+    function waitForVideoReady() {
+      return new Promise(resolve => {
+        const check = () => {
+          if (video.videoWidth > 0 && video.videoHeight > 0) {
+            resolve();
+          } else {
+            requestAnimationFrame(check);
+          }
+        };
+        check();
+      });
+    }
 
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
@@ -95,45 +137,43 @@
       countdownEl.textContent = '';
     }
 
-async function takePhotoStrip() {
-  images.length = 0;
+    async function takePhotoStrip() {
+      images.length = 0;
+      await waitForVideoReady();
 
-  for (let i = 0; i < 3; i++) {
-    await countdown(3);
+      for (let i = 0; i < 3; i++) {
+        await countdown(3);
 
-    const tempCanvas = document.createElement('canvas');
-    const ctx = tempCanvas.getContext('2d');
-    tempCanvas.width = video.videoWidth;
-    tempCanvas.height = video.videoHeight;
+        const tempCanvas = document.createElement('canvas');
+        const ctx = tempCanvas.getContext('2d');
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
 
-    ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+        tempCanvas.width = vw;
+        tempCanvas.height = vh;
 
-    const img = new Image();
-    img.src = tempCanvas.toDataURL('image/png');
+        ctx.drawImage(video, 0, 0, vw, vh);
 
-    await new Promise(resolve => {
-      img.onload = () => resolve();
-    });
+        const img = new Image();
+        img.src = tempCanvas.toDataURL('image/png');
+        await new Promise(resolve => img.onload = resolve);
+        images.push(img);
+      }
 
-    images.push(img);
-  }
-
-  await composeStrip();
-  autoDownloadStrip();
-  printButton.style.display = 'inline-block';
-}
+      await composeStrip();
+      autoDownloadStrip();
+      printButton.style.display = 'inline-block';
+    }
 
     async function composeStrip() {
       photoCtx.clearRect(0, 0, STRIP_WIDTH, STRIP_HEIGHT);
       const template = new Image();
       template.src = overlaySelect.value;
 
-      await new Promise(r => template.onload = r);
+      await new Promise(resolve => template.onload = resolve);
 
-      // Draw background template
       photoCtx.drawImage(template, 0, 0, STRIP_WIDTH, STRIP_HEIGHT);
 
-      // Draw each photo (between header and footer)
       for (let i = 0; i < 3; i++) {
         photoCtx.drawImage(images[i], 0, 300 + i * SLOT_HEIGHT, STRIP_WIDTH, SLOT_HEIGHT);
       }
@@ -147,14 +187,14 @@ async function takePhotoStrip() {
     }
 
     function printTwoCopies() {
-      // Two strips side by side on a 1200x1800 canvas
       printCtx.clearRect(0, 0, 1200, 1800);
       printCtx.drawImage(photoCanvas, 0, 0);
       printCtx.drawImage(photoCanvas, 600, 0);
 
-      const win = window.open();
       const img = new Image();
       img.src = printCanvas.toDataURL('image/png');
+
+      const win = window.open('', '_blank');
       img.onload = () => {
         const doc = win.document;
         doc.write(`<img src="${img.src}" style="width:100%;height:auto;">`);
@@ -166,6 +206,8 @@ async function takePhotoStrip() {
 
     takePhotosBtn.addEventListener('click', takePhotoStrip);
     printButton.addEventListener('click', printTwoCopies);
+
+    initCamera();
   </script>
 </body>
 </html>
