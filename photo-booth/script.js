@@ -110,11 +110,12 @@ async function recordBoomerang() {
   mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
 
   await countdown(3);
-  statusMessage.textContent = "Recording...";
+  countdownEl.textContent = "Recording...";
   mediaRecorder.start();
   await sleep(3000);
+  countdownEl.textContent = "";
   mediaRecorder.stop();
-  statusMessage.textContent = "";
+  
 
   mediaRecorder.onstop = async () => {
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
