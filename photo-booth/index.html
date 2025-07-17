@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Photo Booth</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <style>
     * {
       box-sizing: border-box;
@@ -12,25 +12,39 @@
     body {
       font-family: sans-serif;
       background: #f0f0f0;
-      padding: 20px;
       margin: 0;
+      padding: 0;
       text-align: center;
     }
 
     h1 {
-      font-size: 1.8rem;
+      margin: 20px 0 10px;
+      font-size: 2rem;
     }
 
     video {
       width: 100%;
-      max-width: 360px;
+      max-width: 420px;
       aspect-ratio: 3 / 4;
-      background: #000;
-      border-radius: 10px;
+      background: black;
+      border-radius: 12px;
+    }
+
+    #flash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: white;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 10;
     }
 
     #countdown {
-      font-size: 60px;
+      font-size: 4rem;
       color: red;
       margin: 10px 0;
     }
@@ -54,12 +68,32 @@
 
     label {
       display: block;
-      margin-top: 15px;
+      margin-top: 10px;
+    }
+
+    @media (orientation: landscape) and (min-width: 768px) {
+      video {
+        max-width: 45vh;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+      }
+
+      #countdown {
+        font-size: 5rem;
+      }
+
+      button, select {
+        font-size: 1.2rem;
+        padding: 16px 24px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>📸 Mobile Photo Booth</h1>
+  <div id="flash"></div>
+  <h1>📸 Photo Booth</h1>
 
   <video id="video" autoplay playsinline muted></video>
   <div id="countdown"></div>
@@ -86,6 +120,7 @@
     const photoCanvas = document.getElementById('photoCanvas');
     const printCanvas = document.getElementById('printCanvas');
     const overlaySelect = document.getElementById('overlaySelect');
+    const flashEl = document.getElementById('flash');
 
     const photoCtx = photoCanvas.getContext('2d');
     const printCtx = printCanvas.getContext('2d');
@@ -99,7 +134,7 @@
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
-            facingMode: 'user', // front camera
+            facingMode: 'user',
             width: { ideal: 720 },
             height: { ideal: 960 }
           },
@@ -137,6 +172,13 @@
       countdownEl.textContent = '';
     }
 
+    function flashEffect() {
+      flashEl.style.opacity = '1';
+      setTimeout(() => {
+        flashEl.style.opacity = '0';
+      }, 200);
+    }
+
     async function takePhotoStrip() {
       images.length = 0;
       await waitForVideoReady();
@@ -153,6 +195,8 @@
         tempCanvas.height = vh;
 
         ctx.drawImage(video, 0, 0, vw, vh);
+
+        flashEffect();
 
         const img = new Image();
         img.src = tempCanvas.toDataURL('image/png');
