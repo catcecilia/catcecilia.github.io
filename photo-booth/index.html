@@ -1,42 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Photo Booth</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>📷 Photo Booth</h1>
+  <h1>📸 Photo Booth</h1>
 
-  <div>
-    <label for="modeSelect">Choose Mode:</label>
-    <select id="modeSelect">
-      <option value="strip">Photo Strip</option>
-      <option value="boomerang">Boomerang GIF</option>
-    </select>
-  </div>
-
-  <video id="video" autoplay playsinline muted></video>
+  <video id="video" autoplay playsinline></video>
   <div id="countdown"></div>
   <div id="flash"></div>
 
-  <div id="overlayContainer">
-    <label for="overlaySelect">Overlay:</label>
+  <div id="modeSelect">
+    <label for="mode">Mode:</label>
+    <select id="mode">
+      <option value="strip">Photo Strip</option>
+      <option value="boomerang">Boomerang</option>
+    </select>
+  </div>
+
+  <div id="overlaySelectContainer">
+    <label for="overlaySelect">Choose Template:</label>
     <select id="overlaySelect">
       <option value="overlays/none.png">None</option>
       <option value="overlays/strip-template.png">Strip Template</option>
     </select>
   </div>
 
-  <button id="startBtn">Start</button>
-  <button id="printBtn" style="display:none;">Print 2 Copies</button>
-  <a id="downloadLink" style="display:none;">Download</a>
+  <button id="takePhotos">Start</button>
+  <button id="printButton" style="display:none;">Print 2 Copies</button>
 
   <canvas id="photoCanvas" width="600" height="1800"></canvas>
   <canvas id="printCanvas" width="1200" height="1800"></canvas>
 
-  <script src="libs/gif.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
