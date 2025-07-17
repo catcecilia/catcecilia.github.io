@@ -1,145 +1,139 @@
 const video = document.getElementById('video');
 const countdownEl = document.getElementById('countdown');
-const captureBtn = document.getElementById('capture-btn');
+const takePhotosBtn = document.getElementById('takePhotos');
+const printButton = document.getElementById('printButton');
+const photoCanvas = document.getElementById('photoCanvas');
+const printCanvas = document.getElementById('printCanvas');
+const overlaySelect = document.getElementById('overlaySelect');
+const overlaySelectContainer = document.getElementById('overlaySelectContainer');
 const modeSelect = document.getElementById('mode');
-const overlaySelect = document.getElementById('overlay');
 const flash = document.getElementById('flash');
+
+const photoCtx = photoCanvas.getContext('2d');
+const printCtx = printCanvas.getContext('2d');
+
+const STRIP_WIDTH = 600;
+const STRIP_HEIGHT = 1800;
+const SLOT_HEIGHT = 400;
 
 let mediaStream;
 let mediaRecorder;
 let recordedChunks = [];
 
-async function initCamera() {
-  try {
-    mediaStream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: 'user',
-        width: { ideal: 640 },
-        height: { ideal: 960 }
-      },
-      audio: false
-    });
-    video.srcObject = mediaStream;
-    await video.play();
-  } catch (e) {
-    alert("Unable to access camera.");
-    console.error(e);
+navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+  mediaStream = stream;
+  video.srcObject = stream;
+}).catch(err => alert('Camera access is required.'));
+
+modeSelect.addEventListener('change', () => {
+  const isStrip = modeSelect.value === 'strip';
+  overlaySelectContainer.style.display = isStrip ? 'block' : 'none';
+  printButton.style.display = 'none';
+});
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function countdown(seconds) {
+  for (let i = seconds; i > 0; i--) {
+    countdownEl.textContent = i;
+    await sleep(1000);
   }
+  countdownEl.textContent = '';
+  flashScreen();
 }
 
-function triggerFlash() {
-  flash.classList.add('flash');
-  setTimeout(() => flash.classList.remove('flash'), 150);
+function flashScreen() {
+  flash.style.opacity = 1;
+  setTimeout(() => flash.style.opacity = 0, 150);
 }
 
-function countdown(seconds = 3) {
-  return new Promise(resolve => {
-    let count = seconds;
-    countdownEl.style.display = 'block';
-    countdownEl.textContent = count;
-    const interval = setInterval(() => {
-      count--;
-      if (count <= 0) {
-        clearInterval(interval);
-        countdownEl.textContent = '';
-        countdownEl.style.display = 'none';
-        resolve();
-      } else {
-        countdownEl.textContent = count;
-      }
-    }, 1000);
-  });
-}
+async function takePhotoStrip() {
+  const images = [];
+  const tempCanvas = document.createElement('canvas');
+  const ctx = tempCanvas.getContext('2d');
 
-function captureImageFromVideo() {
-  const canvas = document.createElement('canvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0);
-  return canvas;
-}
-
-async function capturePhotoStrip(overlayUrl) {
-  const stripCanvas = document.createElement('canvas');
-  const stripWidth = 600;
-  const stripHeight = 1800;
-
-  stripCanvas.width = stripWidth;
-  stripCanvas.height = stripHeight;
-  const stripCtx = stripCanvas.getContext('2d');
-
-  const headerHeight = 200;
-  const footerHeight = 200;
-  const photoHeight = (stripHeight - headerHeight - footerHeight) / 3;
-
-  // Optional overlay image
-  let overlayImg = null;
-  if (overlayUrl && overlayUrl !== 'none') {
-    overlayImg = new Image();
-    overlayImg.src = overlayUrl;
-    await new Promise(res => overlayImg.onload = res);
-  }
+  tempCanvas.width = video.videoWidth;
+  tempCanvas.height = video.videoHeight;
 
   for (let i = 0; i < 3; i++) {
-    await countdown();
-    triggerFlash();
-    const canvas = captureImageFromVideo();
-
-    // Resize image to strip format
-    const resized = document.createElement('canvas');
-    resized.width = stripWidth;
-    resized.height = photoHeight;
-    const resizedCtx = resized.getContext('2d');
-    resizedCtx.drawImage(canvas, 0, 0, resized.width, resized.height);
-
-    if (overlayImg) {
-      resizedCtx.drawImage(overlayImg, 0, 0, resized.width, resized.height);
-    }
-
-    stripCtx.drawImage(resized, 0, headerHeight + i * photoHeight);
+    await countdown(3);
+    ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+    const img = new Image();
+    img.src = tempCanvas.toDataURL('image/png');
+    await new Promise(r => img.onload = r);
+    images.push(img);
   }
 
-  // Save automatically
-  const a = document.createElement('a');
-  a.href = stripCanvas.toDataURL('image/png');
-  a.download = 'photo-strip.png';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const template = new Image();
+  template.src = overlaySelect.value;
+  await new Promise(r => template.onload = r);
+
+  photoCtx.clearRect(0, 0, STRIP_WIDTH, STRIP_HEIGHT);
+  photoCtx.drawImage(template, 0, 0, STRIP_WIDTH, STRIP_HEIGHT);
+
+  for (let i = 0; i < 3; i++) {
+    photoCtx.drawImage(images[i], 0, 300 + i * SLOT_HEIGHT, STRIP_WIDTH, SLOT_HEIGHT);
+  }
+
+  const link = document.createElement('a');
+  link.href = photoCanvas.toDataURL('image/png');
+  link.download = 'photo-strip.png';
+  link.click();
+
+  printButton.style.display = 'inline-block';
 }
 
-async function recordBoomerangGif() {
+function printTwoCopies() {
+  printCtx.clearRect(0, 0, 1200, 1800);
+  printCtx.drawImage(photoCanvas, 0, 0);
+  printCtx.drawImage(photoCanvas, 600, 0);
+
+  const win = window.open();
+  const img = new Image();
+  img.src = printCanvas.toDataURL('image/png');
+  img.onload = () => {
+    win.document.write(`<img src="${img.src}" style="width:100%;height:auto;">`);
+    win.document.close();
+    win.focus();
+    win.print();
+  };
+}
+
+async function recordBoomerang() {
   recordedChunks = [];
+  const options = { mimeType: 'video/webm' };
+  mediaRecorder = new MediaRecorder(mediaStream, options);
 
-  await countdown();
-  triggerFlash();
-
-  mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'video/webm' });
   mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
-  mediaRecorder.onstop = () => processBoomerangGIF();
+
+  await countdown(3);
   mediaRecorder.start();
 
-  setTimeout(() => {
-    mediaRecorder.stop();
-  }, 3000); // Record 3s
-}
+  await sleep(3000);
+  mediaRecorder.stop();
 
-function processBoomerangGIF() {
+  mediaRecorder.onstop = async () => {
   const blob = new Blob(recordedChunks, { type: 'video/webm' });
   const videoURL = URL.createObjectURL(blob);
 
+  // Create video element to extract frames
   const videoEl = document.createElement('video');
   videoEl.src = videoURL;
   videoEl.crossOrigin = "anonymous";
   videoEl.muted = true;
   videoEl.playsInline = true;
 
+  await videoEl.play();
+
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
-  const FRAME_INTERVAL = 0.1;
-  const DURATION = 3;
+  const FRAME_INTERVAL = 0.1; // seconds
+  const DURATION = 3; // total duration in seconds
+  const FPS = 10;
+  const frames = [];
 
   videoEl.onloadedmetadata = async () => {
     canvas.width = videoEl.videoWidth;
@@ -148,24 +142,25 @@ function processBoomerangGIF() {
     const gif = new GIF({
       workers: 2,
       quality: 10,
+      workerScript: 'libs/gif.worker.js',
       width: canvas.width,
-      height: canvas.height,
-      workerScript: 'libs/gif.worker.js'
+      height: canvas.height
     });
 
     const captureFrames = async () => {
       for (let t = 0; t < DURATION; t += FRAME_INTERVAL) {
         videoEl.currentTime = t;
         await new Promise(r => videoEl.onseeked = r);
-        ctx.drawImage(videoEl, 0, 0);
-        gif.addFrame(ctx, { copy: true, delay: 100 });
+        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+        gif.addFrame(ctx, { copy: true, delay: 1000 * FRAME_INTERVAL });
       }
 
+      // Reverse for boomerang effect
       for (let t = DURATION - FRAME_INTERVAL; t >= 0; t -= FRAME_INTERVAL) {
         videoEl.currentTime = t;
         await new Promise(r => videoEl.onseeked = r);
-        ctx.drawImage(videoEl, 0, 0);
-        gif.addFrame(ctx, { copy: true, delay: 100 });
+        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+        gif.addFrame(ctx, { copy: true, delay: 1000 * FRAME_INTERVAL });
       }
 
       gif.on('finished', function(blob) {
@@ -186,19 +181,15 @@ function processBoomerangGIF() {
 
     await captureFrames();
   };
-
-  videoEl.play();
+};
 }
 
-captureBtn.addEventListener('click', () => {
-  const mode = modeSelect.value;
-  const overlay = overlaySelect.value;
-
-  if (mode === 'strip') {
-    capturePhotoStrip(overlay === 'none' ? null : overlay);
-  } else if (mode === 'boomerang') {
-    recordBoomerangGif();
+takePhotosBtn.addEventListener('click', () => {
+  if (modeSelect.value === 'strip') {
+    takePhotoStrip();
+  } else {
+    recordBoomerang();
   }
 });
 
-window.addEventListener('load', initCamera);
+printButton.addEventListener('click', printTwoCopies);
