@@ -39,6 +39,10 @@ canvas {
   transition: opacity 0.3s;
 }
 
+.flash {
+  opacity: 1 !important;
+}
+
 @media screen and (orientation: landscape) and (min-width: 768px) {
   video {
     max-width: 600px;
