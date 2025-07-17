@@ -14,7 +14,9 @@
     video {
       width: 300px;
       border: 2px solid black;
+      height: auto;
       border-radius: 10px;
+      background: black;
     }
 
     #countdown {
@@ -71,9 +73,15 @@
     const STRIP_HEIGHT = 1800;
     const SLOT_HEIGHT = 400;
 
-    navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-      video.srcObject = stream;
-    });
+    navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => {
+    video.srcObject = stream;
+    video.play();
+  })
+  .catch(err => {
+    alert('Error accessing camera: ' + err.message);
+    console.error(err);
+  });
 
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
