@@ -8,6 +8,7 @@ const overlaySelect = document.getElementById('overlaySelect');
 const overlaySelectContainer = document.getElementById('overlaySelectContainer');
 const modeSelect = document.getElementById('mode');
 const flash = document.getElementById('flash');
+const statusMessage = document.querySelector('.status-message'); 
 
 const photoCtx = photoCanvas.getContext('2d');
 const printCtx = printCanvas.getContext('2d');
