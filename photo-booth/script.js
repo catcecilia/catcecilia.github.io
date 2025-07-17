@@ -110,35 +110,31 @@ async function recordBoomerang() {
 
   await countdown(3);
   mediaRecorder.start();
-
   await sleep(3000);
   mediaRecorder.stop();
 
   mediaRecorder.onstop = async () => {
-  const blob = new Blob(recordedChunks, { type: 'video/webm' });
-  const videoURL = URL.createObjectURL(blob);
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const videoURL = URL.createObjectURL(blob);
 
-  // Create video element to extract frames
-  const videoEl = document.createElement('video');
-  videoEl.src = videoURL;
-  videoEl.crossOrigin = "anonymous";
-  videoEl.muted = true;
-  videoEl.playsInline = true;
+    const videoEl = document.createElement('video');
+    videoEl.src = videoURL;
+    videoEl.crossOrigin = "anonymous";
+    videoEl.muted = true;
+    videoEl.playsInline = true;
 
-  await videoEl.play();
+    // Ensure video metadata is fully loaded
+    await new Promise(resolve => {
+      videoEl.onloadedmetadata = resolve;
+    });
 
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-
-  const FRAME_INTERVAL = 0.1; // seconds
-  const DURATION = 3; // total duration in seconds
-  const FPS = 10;
-  const frames = [];
-
-  videoEl.onloadedmetadata = async () => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
     canvas.width = videoEl.videoWidth;
     canvas.height = videoEl.videoHeight;
 
+    const FRAME_INTERVAL = 0.1;
+    const DURATION = Math.min(3, videoEl.duration);
     const gif = new GIF({
       workers: 2,
       quality: 10,
@@ -147,41 +143,42 @@ async function recordBoomerang() {
       height: canvas.height
     });
 
-    const captureFrames = async () => {
-      for (let t = 0; t < DURATION; t += FRAME_INTERVAL) {
-        videoEl.currentTime = t;
-        await new Promise(r => videoEl.onseeked = r);
-        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-        gif.addFrame(ctx, { copy: true, delay: 1000 * FRAME_INTERVAL });
-      }
-
-      // Reverse for boomerang effect
-      for (let t = DURATION - FRAME_INTERVAL; t >= 0; t -= FRAME_INTERVAL) {
-        videoEl.currentTime = t;
-        await new Promise(r => videoEl.onseeked = r);
-        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-        gif.addFrame(ctx, { copy: true, delay: 1000 * FRAME_INTERVAL });
-      }
-
-      gif.on('finished', function(blob) {
-        const save = confirm("Boomerang GIF ready! Would you like to save it?");
-        if (save) {
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = 'boomerang.gif';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        }
-        URL.revokeObjectURL(videoURL);
+    const captureFrameAt = (time) => {
+      return new Promise((resolve) => {
+        videoEl.currentTime = time;
+        videoEl.onseeked = () => {
+          ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+          gif.addFrame(ctx, { copy: true, delay: 1000 * FRAME_INTERVAL });
+          resolve();
+        };
       });
-
-      gif.render();
     };
 
-    await captureFrames();
+    // Capture forward frames
+    for (let t = 0; t < DURATION; t += FRAME_INTERVAL) {
+      await captureFrameAt(t);
+    }
+
+    // Capture reverse frames
+    for (let t = DURATION - FRAME_INTERVAL; t >= 0; t -= FRAME_INTERVAL) {
+      await captureFrameAt(t);
+    }
+
+    gif.on('finished', function (blob) {
+      const save = confirm("Boomerang GIF ready! Would you like to save it?");
+      if (save) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'boomerang.gif';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+      URL.revokeObjectURL(videoURL);
+    });
+
+    gif.render();
   };
-};
 }
 
 takePhotosBtn.addEventListener('click', () => {
