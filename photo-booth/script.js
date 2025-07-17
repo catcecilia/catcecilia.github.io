@@ -123,61 +123,66 @@ async function recordBoomerang() {
     videoEl.muted = true;
     videoEl.playsInline = true;
 
-    // Ensure video metadata is fully loaded
-    await new Promise(resolve => {
-      videoEl.onloadedmetadata = resolve;
-    });
+    videoEl.addEventListener('loadedmetadata', async () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = videoEl.videoWidth;
+      canvas.height = videoEl.videoHeight;
 
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = videoEl.videoWidth;
-    canvas.height = videoEl.videoHeight;
-
-    const FRAME_INTERVAL = 0.1;
-    const DURATION = Math.min(3, videoEl.duration);
-    const gif = new GIF({
-      workers: 2,
-      quality: 10,
-      workerScript: 'libs/gif.worker.js',
-      width: canvas.width,
-      height: canvas.height
-    });
-
-    const captureFrameAt = (time) => {
-      return new Promise((resolve) => {
-        videoEl.currentTime = time;
-        videoEl.onseeked = () => {
-          ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-          gif.addFrame(ctx, { copy: true, delay: 1000 * FRAME_INTERVAL });
-          resolve();
-        };
+      const gif = new GIF({
+        workers: 2,
+        quality: 10,
+        workerScript: 'libs/gif.worker.js',
+        width: canvas.width,
+        height: canvas.height
       });
-    };
 
-    // Capture forward frames
-    for (let t = 0; t < DURATION; t += FRAME_INTERVAL) {
-      await captureFrameAt(t);
-    }
+      const FRAME_INTERVAL = 0.1; // seconds
+      const DURATION = 3;
 
-    // Capture reverse frames
-    for (let t = DURATION - FRAME_INTERVAL; t >= 0; t -= FRAME_INTERVAL) {
-      await captureFrameAt(t);
-    }
+      const captureFrameAt = (t) => {
+        return new Promise(resolve => {
+          videoEl.currentTime = t;
+          videoEl.onseeked = () => {
+            ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+            gif.addFrame(ctx, { copy: true, delay: 1000 * FRAME_INTERVAL });
+            resolve();
+          };
+        });
+      };
 
-    gif.on('finished', function (blob) {
-      const save = confirm("Boomerang GIF ready! Would you like to save it?");
-      if (save) {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'boomerang.gif';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
-      URL.revokeObjectURL(videoURL);
+      // Wait until metadata is loaded before starting capture
+      const captureFrames = async () => {
+        for (let t = 0; t < DURATION; t += FRAME_INTERVAL) {
+          await captureFrameAt(t);
+        }
+
+        for (let t = DURATION - FRAME_INTERVAL; t >= 0; t -= FRAME_INTERVAL) {
+          await captureFrameAt(t);
+        }
+
+        gif.on('finished', function(gifBlob) {
+          const save = confirm("Boomerang GIF ready! Would you like to save it?");
+          if (save) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(gifBlob);
+            a.download = 'boomerang.gif';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+          URL.revokeObjectURL(videoURL);
+        });
+
+        gif.render();
+      };
+
+      await captureFrames();
     });
 
-    gif.render();
+    // Trigger metadata load
+    document.body.appendChild(videoEl);
+    videoEl.load(); // ensures `onloadedmetadata` fires
   };
 }
 
