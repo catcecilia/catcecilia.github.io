@@ -12,6 +12,10 @@ video {
   border-radius: 10px;
 }
 
+video:not(:first-child){
+  display: none;
+}
+
 #countdown {
   font-size: 80px;
   color: red;
