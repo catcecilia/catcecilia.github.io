@@ -2,256 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Photo Booth</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: sans-serif;
-      background: #f0f0f0;
-      margin: 0;
-      padding: 0;
-      text-align: center;
-    }
-
-    h1 {
-      margin: 20px 0 10px;
-      font-size: 2rem;
-    }
-
-    video {
-      width: 100%;
-      max-width: 420px;
-      aspect-ratio: 3 / 4;
-      background: black;
-      border-radius: 12px;
-    }
-
-    #flash {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: white;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s;
-      z-index: 10;
-    }
-
-    #countdown {
-      font-size: 4rem;
-      color: red;
-      margin: 10px 0;
-    }
-
-    button, select {
-      margin: 10px;
-      padding: 14px 20px;
-      font-size: 1rem;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #ddd;
-    }
-
-    canvas {
-      display: none;
-    }
-
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-
-    @media (orientation: landscape) and (min-width: 768px) {
-      video {
-        max-width: 45vh;
-      }
-
-      h1 {
-        font-size: 2.5rem;
-      }
-
-      #countdown {
-        font-size: 5rem;
-      }
-
-      button, select {
-        font-size: 1.2rem;
-        padding: 16px 24px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="flash"></div>
-  <h1>📸 Photo Booth</h1>
+  <h1>📷 Photo Booth</h1>
+
+  <div>
+    <label for="modeSelect">Choose Mode:</label>
+    <select id="modeSelect">
+      <option value="strip">Photo Strip</option>
+      <option value="boomerang">Boomerang GIF</option>
+    </select>
+  </div>
 
   <video id="video" autoplay playsinline muted></video>
   <div id="countdown"></div>
+  <div id="flash"></div>
 
-  <label for="overlaySelect">Choose Template:</label>
-  <select id="overlaySelect">
-    <option value="overlays/none.png">None</option>
-    <option value="overlays/strip-template.png">Strip Template</option>
-  </select>
-
-  <div>
-    <button id="takePhotos">📷 Take Strip</button>
-    <button id="printButton" style="display:none;">🖨️ Print 2 Copies</button>
+  <div id="overlayContainer">
+    <label for="overlaySelect">Overlay:</label>
+    <select id="overlaySelect">
+      <option value="overlays/none.png">None</option>
+      <option value="overlays/strip-template.png">Strip Template</option>
+    </select>
   </div>
+
+  <button id="startBtn">Start</button>
+  <button id="printBtn" style="display:none;">Print 2 Copies</button>
+  <a id="downloadLink" style="display:none;">Download</a>
 
   <canvas id="photoCanvas" width="600" height="1800"></canvas>
   <canvas id="printCanvas" width="1200" height="1800"></canvas>
 
-  <script>
-    const video = document.getElementById('video');
-    const countdownEl = document.getElementById('countdown');
-    const takePhotosBtn = document.getElementById('takePhotos');
-    const printButton = document.getElementById('printButton');
-    const photoCanvas = document.getElementById('photoCanvas');
-    const printCanvas = document.getElementById('printCanvas');
-    const overlaySelect = document.getElementById('overlaySelect');
-    const flashEl = document.getElementById('flash');
-
-    const photoCtx = photoCanvas.getContext('2d');
-    const printCtx = printCanvas.getContext('2d');
-    const images = [];
-
-    const STRIP_WIDTH = 600;
-    const STRIP_HEIGHT = 1800;
-    const SLOT_HEIGHT = 400;
-
-    async function initCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'user',
-            width: { ideal: 720 },
-            height: { ideal: 960 }
-          },
-          audio: false
-        });
-        video.srcObject = stream;
-      } catch (err) {
-        alert('Camera access denied or unavailable.');
-        console.error(err);
-      }
-    }
-
-    function waitForVideoReady() {
-      return new Promise(resolve => {
-        const check = () => {
-          if (video.videoWidth > 0 && video.videoHeight > 0) {
-            resolve();
-          } else {
-            requestAnimationFrame(check);
-          }
-        };
-        check();
-      });
-    }
-
-    function sleep(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    async function countdown(seconds) {
-      for (let i = seconds; i > 0; i--) {
-        countdownEl.textContent = i;
-        await sleep(1000);
-      }
-      countdownEl.textContent = '';
-    }
-
-    function flashEffect() {
-      flashEl.style.opacity = '1';
-      setTimeout(() => {
-        flashEl.style.opacity = '0';
-      }, 200);
-    }
-
-    async function takePhotoStrip() {
-      images.length = 0;
-      await waitForVideoReady();
-
-      for (let i = 0; i < 3; i++) {
-        await countdown(3);
-
-        const tempCanvas = document.createElement('canvas');
-        const ctx = tempCanvas.getContext('2d');
-        const vw = video.videoWidth;
-        const vh = video.videoHeight;
-
-        tempCanvas.width = vw;
-        tempCanvas.height = vh;
-
-        ctx.drawImage(video, 0, 0, vw, vh);
-
-        flashEffect();
-
-        const img = new Image();
-        img.src = tempCanvas.toDataURL('image/png');
-        await new Promise(resolve => img.onload = resolve);
-        images.push(img);
-      }
-
-      await composeStrip();
-      autoDownloadStrip();
-      printButton.style.display = 'inline-block';
-    }
-
-    async function composeStrip() {
-      photoCtx.clearRect(0, 0, STRIP_WIDTH, STRIP_HEIGHT);
-      const template = new Image();
-      template.src = overlaySelect.value;
-
-      await new Promise(resolve => template.onload = resolve);
-
-      photoCtx.drawImage(template, 0, 0, STRIP_WIDTH, STRIP_HEIGHT);
-
-      for (let i = 0; i < 3; i++) {
-        photoCtx.drawImage(images[i], 0, 300 + i * SLOT_HEIGHT, STRIP_WIDTH, SLOT_HEIGHT);
-      }
-    }
-
-    function autoDownloadStrip() {
-      const link = document.createElement('a');
-      link.href = photoCanvas.toDataURL('image/png');
-      link.download = 'photo-strip.png';
-      link.click();
-    }
-
-    function printTwoCopies() {
-      printCtx.clearRect(0, 0, 1200, 1800);
-      printCtx.drawImage(photoCanvas, 0, 0);
-      printCtx.drawImage(photoCanvas, 600, 0);
-
-      const img = new Image();
-      img.src = printCanvas.toDataURL('image/png');
-
-      const win = window.open('', '_blank');
-      img.onload = () => {
-        const doc = win.document;
-        doc.write(`<img src="${img.src}" style="width:100%;height:auto;">`);
-        doc.close();
-        win.focus();
-        win.print();
-      };
-    }
-
-    takePhotosBtn.addEventListener('click', takePhotoStrip);
-    printButton.addEventListener('click', printTwoCopies);
-
-    initCamera();
-  </script>
+  <script src="libs/gif.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
