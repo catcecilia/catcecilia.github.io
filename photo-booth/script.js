@@ -162,17 +162,23 @@ async function recordBoomerang() {
         }
 
         gif.on('finished', function(gifBlob) {
-          const save = confirm("Boomerang GIF ready! Would you like to save it?");
-          if (save) {
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(gifBlob);
-            a.download = 'boomerang.gif';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-          }
-          URL.revokeObjectURL(videoURL);
-        });
+  const save = confirm("Boomerang GIF is ready! Would you like to save it?");
+  if (save) {
+    const a = document.createElement('a');
+    const url = URL.createObjectURL(gifBlob);
+    a.href = url;
+    a.download = 'boomerang.gif';
+    document.body.appendChild(a);
+    a.style.display = 'none'; // prevent UI disruption
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+  }
+
+  // ✅ DO NOT append the image to the DOM
+});
 
         gif.render();
       };
