@@ -95,26 +95,33 @@
       countdownEl.textContent = '';
     }
 
-    async function takePhotoStrip() {
-      images.length = 0;
-      const tempCanvas = document.createElement('canvas');
-      const ctx = tempCanvas.getContext('2d');
-      tempCanvas.width = video.videoWidth;
-      tempCanvas.height = video.videoHeight;
+async function takePhotoStrip() {
+  images.length = 0;
 
-      for (let i = 0; i < 3; i++) {
-        await countdown(3);
-        ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-        const img = new Image();
-        img.src = tempCanvas.toDataURL('image/png');
-        await new Promise(r => img.onload = r);
-        images.push(img);
-      }
+  for (let i = 0; i < 3; i++) {
+    await countdown(3);
 
-      await composeStrip();
-      autoDownloadStrip();
-      printButton.style.display = 'inline-block';
-    }
+    const tempCanvas = document.createElement('canvas');
+    const ctx = tempCanvas.getContext('2d');
+    tempCanvas.width = video.videoWidth;
+    tempCanvas.height = video.videoHeight;
+
+    ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+
+    const img = new Image();
+    img.src = tempCanvas.toDataURL('image/png');
+
+    await new Promise(resolve => {
+      img.onload = () => resolve();
+    });
+
+    images.push(img);
+  }
+
+  await composeStrip();
+  autoDownloadStrip();
+  printButton.style.display = 'inline-block';
+}
 
     async function composeStrip() {
       photoCtx.clearRect(0, 0, STRIP_WIDTH, STRIP_HEIGHT);
