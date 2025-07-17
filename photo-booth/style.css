@@ -12,7 +12,7 @@ video {
   border-radius: 10px;
 }
 
-video:not(:first-child){
+video:not(:first-of-type){
   display: none;
 }
 
