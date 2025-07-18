@@ -23,7 +23,7 @@ video:not([id]) {
 }
 
 #status {
-  font-size: 80px;
+  font-size: 60px;
   color: red;
   margin: 10px 0;
 }
