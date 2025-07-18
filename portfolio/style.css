@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+body {
+  background: url('https://www.transparenttextures.com/patterns/sketch.png');
+  background-color: #fff8f2;
+  margin: 0;
+  font-family: 'VT323', monospace;
+  cursor: url('https://cur.cursors-4u.net/cursors/cur-2/cur118.cur'), auto;
+  color: #333;
+}
+
+.wrapper {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+  border: 5px dashed #f8b5d0;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 8px 8px #e7b6f2;
+}
+
+header {
+  text-align: center;
+  background: #ffe0f0;
+  padding: 10px;
+  border: 3px dotted #ff90c2;
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-size: 2.5rem;
+  color: #ff69b4;
+  text-shadow: 1px 1px #fff;
+}
+
+.subheading {
+  font-size: 1.2rem;
+  color: #a855f7;
+}
+
+.projects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.project-card {
+  width: 250px;
+  background: #fff7fa;
+  border: 3px dashed #dda0dd;
+  border-radius: 10px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 5px 5px #f8b5d0;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.project-card:hover {
+  transform: translateY(-5px) rotate(-1deg);
+  box-shadow: 6px 6px #e7b6f2;
+  background: #ffe6f9;
+}
+
+.project-card img {
+  width: 100%;
+  border: 2px solid #ff90c2;
+  border-radius: 8px;
+}
+
+footer {
+  text-align: center;
+  margin-top: 40px;
+  font-size: 1.2rem;
+  background: #f0e7ff;
+  padding: 10px;
+  border-top: 3px dotted #dda0dd;
+}
+
+/* Pixel GIF stickers */
+.gif {
+  position: fixed;
+  z-index: 999;
+  pointer-events: none;
+}
+
+.sparkle {
+  top: 20px;
+  left: 20px;
+  width: 40px;
+}
+
+.heart {
+  bottom: 20px;
+  left: 30px;
+  width: 50px;
+}
+
+.paw {
+  top: 30px;
+  right: 20px;
+  width: 40px;
+}
+
+/* Virtual Pet */
+#virtual-pet {
+  position: fixed;
+  bottom: 10px;
+  left: 0;
+  width: 60px;
+  z-index: 1000;
+  pointer-events: none;
+  transition: transform 0.3s ease-in-out;
+}
