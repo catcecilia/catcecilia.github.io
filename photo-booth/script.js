@@ -8,7 +8,7 @@ const overlaySelect = document.getElementById('overlaySelect');
 const overlaySelectContainer = document.getElementById('overlaySelectContainer');
 const modeSelect = document.getElementById('mode');
 const flash = document.getElementById('flash');
-
+const statusMessage = document.getElementById('status');
 const photoCtx = photoCanvas.getContext('2d');
 const printCtx = printCanvas.getContext('2d');
 
@@ -109,9 +109,11 @@ async function recordBoomerang() {
   mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
 
   await countdown(3);
+  statusMessage.textContent = "Recording";
   mediaRecorder.start();
   await sleep(3000);
   mediaRecorder.stop();
+  statusMessage.textContent = "";
   
 
   mediaRecorder.onstop = async () => {
