@@ -84,22 +84,18 @@ footer {
   pointer-events: none;
 }
 
-.sparkle {
-  top: 20px;
-  left: 20px;
-  width: 40px;
+/* Animation keyframes */
+@keyframes bounceWiggle {
+  0%   { transform: rotate(0deg) translateY(0); }
+  25%  { transform: rotate(2deg) translateY(-2px); }
+  50%  { transform: rotate(-2deg) translateY(2px); }
+  75%  { transform: rotate(1deg) translateY(-1px); }
+  100% { transform: rotate(0deg) translateY(0); }
 }
 
-.heart {
-  bottom: 20px;
-  left: 30px;
-  width: 50px;
-}
-
-.paw {
-  top: 30px;
-  right: 20px;
-  width: 40px;
+/* Apply animation when group-hovered */
+.project-card.animated {
+  animation: bounceWiggle 0.5s ease-in-out;
 }
 
 /* Virtual Pet */
