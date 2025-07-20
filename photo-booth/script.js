@@ -195,6 +195,8 @@ async function recordBoomerang() {
       for (const t of boomerangTimes) {
         await captureFrameAt(t);
       }
+      
+      statusMessage.textContent = "Rendering";
 
       gif.on('finished', function (gifBlob) {
         const url = URL.createObjectURL(gifBlob);
