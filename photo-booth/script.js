@@ -192,13 +192,14 @@ async function recordBoomerang() {
           };
 
           videoEl.addEventListener('seeked', seekHandler);
-          videoEl.currentTime = Math.min(t, videoEl.duration - 0.01);
+          videoEl.currentTime = Math.min(t, videoEl.duration - 0.05);
         });
       };
 
       statusMessage.textContent = "Processing boomerang...";
 
       for (const t of boomerangTimes) {
+        console.log(`Capturing frame at ${t.toFixed(2)}s`);
         await captureFrameAt(t);
       }
 
@@ -219,8 +220,20 @@ async function recordBoomerang() {
         }, 100);
         statusMessage.textContent = "";
       });
-
+      if (gif.frames.length === 0) {
+        console.error("No frames added to GIF. Aborting render.");
+        statusMessage.textContent = "Failed to render boomerang.";
+        return;
+      }
       gif.render();
+      gif.on('abort', () => {
+        console.error("GIF rendering aborted");
+        statusMessage.textContent = "GIF render aborted.";
+      });
+      gif.on('error', (err) => {
+        console.error("GIF render error", err);
+        statusMessage.textContent = "GIF render error.";
+      });
     });
 
     document.body.appendChild(videoEl);
