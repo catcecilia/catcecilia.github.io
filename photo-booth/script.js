@@ -155,21 +155,19 @@ async function recordBoomerang() {
       });
 
       const duration = videoEl.duration;
-      const frameRate = 20; // 20 fps for smooth motion
+      const frameRate = 20; // frames per second
       const totalFrames = Math.floor(duration * frameRate);
 
       const frameTimes = [];
       for (let i = 0; i < totalFrames; i++) {
         frameTimes.push(i / frameRate);
       }
+      const boomerangTimes = frameTimes.concat([...frameTimes].reverse());
 
-      // Create reverse frame times
-      const reverseTimes = [...frameTimes].reverse();
-      const boomerangTimes = frameTimes.concat(reverseTimes);
-
-      const captureFrameAt = (time) => {
+      // Helper to capture frame at time `t`
+      const captureFrameAt = (t) => {
         return new Promise((resolve) => {
-          videoEl.currentTime = time;
+          videoEl.currentTime = t;
           videoEl.onseeked = () => {
             ctx.save();
 
@@ -193,11 +191,12 @@ async function recordBoomerang() {
           };
         });
       };
-
-      await captureFrames();
+      
+      for (const t of boomerangTimes) {
+        await captureFrameAt(t);
+      }
 
       gif.on('finished', function (gifBlob) {
-        statusMessage.textContent = "";
         const url = URL.createObjectURL(gifBlob);
         const a = document.createElement('a');
         a.href = url;
@@ -209,6 +208,7 @@ async function recordBoomerang() {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         }, 100);
+        statusMessage.textContent = "";
       });
 
       gif.render();
