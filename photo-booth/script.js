@@ -116,7 +116,7 @@ async function recordBoomerang() {
   statusMessage.textContent = "";
 
   mediaRecorder.onstop = async () => {
-    statusMessage.textContent = "Rendering";
+    statusMessage.textContent = "Processing";
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
     const videoURL = URL.createObjectURL(blob);
 
@@ -135,9 +135,9 @@ async function recordBoomerang() {
         isPortrait = window.innerHeight > window.innerWidth;
       }
 
-      // Set canvas dimensions based on orientation
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
+
       if (isPortrait) {
         canvas.width = videoEl.videoHeight;
         canvas.height = videoEl.videoWidth;
@@ -154,17 +154,26 @@ async function recordBoomerang() {
         height: canvas.height
       });
 
-      const FRAME_INTERVAL = 0.1; // seconds
-      const DURATION = 3;
+      const duration = videoEl.duration;
+      const frameRate = 20; // 20 fps for smooth motion
+      const totalFrames = Math.floor(duration * frameRate);
 
-      const captureFrameAt = (t) => {
-        return new Promise(resolve => {
-          videoEl.currentTime = t;
+      const frameTimes = [];
+      for (let i = 0; i < totalFrames; i++) {
+        frameTimes.push(i / frameRate);
+      }
+
+      // Create reverse frame times
+      const reverseTimes = [...frameTimes].reverse();
+      const boomerangTimes = frameTimes.concat(reverseTimes);
+
+      const captureFrameAt = (time) => {
+        return new Promise((resolve) => {
+          videoEl.currentTime = time;
           videoEl.onseeked = () => {
             ctx.save();
 
             if (isPortrait) {
-              // Rotate 90° clockwise
               ctx.translate(canvas.width / 2, canvas.height / 2);
               ctx.rotate(90 * Math.PI / 180);
               ctx.drawImage(
@@ -179,39 +188,32 @@ async function recordBoomerang() {
             }
 
             ctx.restore();
-            gif.addFrame(ctx, { copy: true, delay: 1000 * FRAME_INTERVAL });
+            gif.addFrame(ctx, { copy: true, delay: 1000 / frameRate });
             resolve();
           };
         });
       };
 
-      const captureFrames = async () => {
-        for (let t = 0; t < DURATION; t += FRAME_INTERVAL) {
-          await captureFrameAt(t);
-        }
-        for (let t = DURATION - FRAME_INTERVAL; t >= 0; t -= FRAME_INTERVAL) {
-          await captureFrameAt(t);
-        }
+      for (const t of boomerangTimes) {
+        await captureFrameAt(t);
+      }
 
-        gif.on('finished', function (gifBlob) {
-          statusMessage.textContent = "";
-          const url = URL.createObjectURL(gifBlob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'boomerang.gif';
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          }, 100);
-        });
+      gif.on('finished', function (gifBlob) {
+        statusMessage.textContent = "";
+        const url = URL.createObjectURL(gifBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'boomerang.gif';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 100);
+      });
 
-        gif.render();
-      };
-
-      await captureFrames();
+      gif.render();
     });
 
     document.body.appendChild(videoEl);
