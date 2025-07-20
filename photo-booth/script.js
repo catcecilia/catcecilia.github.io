@@ -146,9 +146,33 @@ async function recordBoomerang() {
       const captureFrameAt = (t) => {
         return new Promise(resolve => {
           videoEl.currentTime = t;
+      
           videoEl.onseeked = () => {
-            ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+            const videoAspect = videoEl.videoWidth / videoEl.videoHeight;
+            const canvasAspect = canvas.width / canvas.height;
+      
+            ctx.save(); // Save current transform state
+      
+            // Check if rotation is needed (e.g. portrait video on landscape canvas)
+            if (videoEl.videoWidth < videoEl.videoHeight) {
+              // Rotate canvas 90 degrees
+              canvas.width = videoEl.videoHeight;
+              canvas.height = videoEl.videoWidth;
+              ctx.translate(canvas.width, 0);
+              ctx.rotate(Math.PI / 2);
+      
+              ctx.drawImage(videoEl, 0, 0, videoEl.videoWidth, videoEl.videoHeight);
+            } else {
+              // No rotation needed
+              canvas.width = videoEl.videoWidth;
+              canvas.height = videoEl.videoHeight;
+      
+              ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+            }
+      
+            ctx.restore(); // Reset transform to avoid stacking
             gif.addFrame(ctx, { copy: true, delay: 1000 * FRAME_INTERVAL });
+      
             resolve();
           };
         });
