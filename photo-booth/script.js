@@ -111,9 +111,9 @@ async function recordBoomerang() {
   await countdown(3);
   statusMessage.textContent = "Recording...";
   mediaRecorder.start();
+  await started;
   await sleep(3000);
 
-  // ✅ Set onstop *before* stopping
   mediaRecorder.onstop = async () => {
     statusMessage.textContent = "Rendering";
 
