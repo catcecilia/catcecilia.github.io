@@ -194,9 +194,7 @@ async function recordBoomerang() {
         });
       };
 
-      for (const t of boomerangTimes) {
-        await captureFrameAt(t);
-      }
+      await captureFrames();
 
       gif.on('finished', function (gifBlob) {
         statusMessage.textContent = "";
