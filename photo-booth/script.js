@@ -143,36 +143,34 @@ async function recordBoomerang() {
       const FRAME_INTERVAL = 0.1; // seconds
       const DURATION = 3;
 
-      const captureFrameAt = (t) => {
+      constconst captureFrameAt = (t) => {
         return new Promise(resolve => {
           videoEl.currentTime = t;
       
           videoEl.onseeked = () => {
-            const videoAspect = videoEl.videoWidth / videoEl.videoHeight;
-            const canvasAspect = canvas.width / canvas.height;
+            const vw = videoEl.videoWidth;
+            const vh = videoEl.videoHeight;
       
-            ctx.save(); // Save current transform state
+            // Portrait mode?
+            const isPortrait = vh > vw;
       
-            // Check if rotation is needed (e.g. portrait video on landscape canvas)
-            if (videoEl.videoWidth < videoEl.videoHeight) {
-              // Rotate canvas 90 degrees
-              canvas.width = videoEl.videoHeight;
-              canvas.height = videoEl.videoWidth;
-              ctx.translate(canvas.width, 0);
-              ctx.rotate(Math.PI / 2);
+            if (isPortrait) {
+              canvas.width = vh;
+              canvas.height = vw;
       
-              ctx.drawImage(videoEl, 0, 0, videoEl.videoWidth, videoEl.videoHeight);
+              ctx.save();
+              ctx.translate(canvas.width, 0);        // Move origin to top-right
+              ctx.rotate(Math.PI / 2);               // Rotate 90 degrees clockwise
+              ctx.drawImage(videoEl, 0, 0, vw, vh);   // Draw video into rotated canvas
+              ctx.restore();
             } else {
-              // No rotation needed
-              canvas.width = videoEl.videoWidth;
-              canvas.height = videoEl.videoHeight;
+              canvas.width = vw;
+              canvas.height = vh;
       
-              ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+              ctx.drawImage(videoEl, 0, 0, vw, vh);
             }
       
-            ctx.restore(); // Reset transform to avoid stacking
             gif.addFrame(ctx, { copy: true, delay: 1000 * FRAME_INTERVAL });
-      
             resolve();
           };
         });
