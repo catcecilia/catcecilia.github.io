@@ -223,7 +223,7 @@ async function recordBoomerang() {
 
     gif.render();
   };
-}}
+}
 
 takePhotosBtn.addEventListener('click', () => {
   if (modeSelect.value === 'strip') {
