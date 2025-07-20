@@ -111,9 +111,17 @@ async function recordBoomerang() {
   await countdown(3);
   statusMessage.textContent = "Recording...";
 
-  mediaRecorder.onstop = async () => {
-    statusMessage.textContent = "Rendering";
+  // Wait for mediaRecorder to actually start
+  const started = new Promise(resolve => {
+    mediaRecorder.onstart = () => {
+      console.log("Recorder started");
+      resolve();
+    };
+  });
 
+  // Attach onstop BEFORE calling stop
+  mediaRecorder.onstop = async () => {
+    console.log("Recorder stopped");
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
     const videoURL = URL.createObjectURL(blob);
 
@@ -123,15 +131,11 @@ async function recordBoomerang() {
     videoEl.muted = true;
     videoEl.playsInline = true;
 
-    videoEl.onerror = (e) => {
-      console.error("Video element error:", e);
-    };
-
     videoEl.addEventListener('loadedmetadata', async () => {
-
+      // Portrait detection
       let isPortrait = false;
       if (window.screen && window.screen.orientation && window.screen.orientation.angle !== undefined) {
-        isPortrait = window.screen.orientation.angle === 0 || window.screen.orientation.angle === 180;
+        isPortrait = screen.orientation.angle === 0 || screen.orientation.angle === 180;
       } else {
         isPortrait = window.innerHeight > window.innerWidth;
       }
@@ -188,33 +192,20 @@ async function recordBoomerang() {
           };
 
           videoEl.addEventListener('seeked', seekHandler);
-          let safeTime = t;
-          if (t >= videoEl.duration) safeTime = videoEl.duration - 0.05;
-          videoEl.currentTime = safeTime;
+          videoEl.currentTime = Math.min(t, videoEl.duration - 0.01);
         });
       };
 
-      const started = new Promise(resolve => {
-        mediaRecorder.onstart = () => {
-          console.log("Recorder started");
-          resolve();
-        };
-      });
-      
-      mediaRecorder.start();
-      await sleep(3000);
-      mediaRecorder.stop();
       statusMessage.textContent = "Processing boomerang...";
 
       for (const t of boomerangTimes) {
         await captureFrameAt(t);
       }
 
-      statusMessage.textContent = "Finalizing...";
+      statusMessage.textContent = "Rendering...";
 
       gif.on('finished', function (gifBlob) {
-        console.log("done");
-        statusMessage.textContent = "Boomerang ready!";
+        statusMessage.textContent = "Download ready";
         const url = URL.createObjectURL(gifBlob);
         const a = document.createElement('a');
         a.href = url;
@@ -226,6 +217,7 @@ async function recordBoomerang() {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         }, 100);
+        statusMessage.textContent = "";
       });
 
       gif.render();
@@ -235,8 +227,10 @@ async function recordBoomerang() {
     videoEl.load();
   };
 
-  mediaRecorder.stop(); 
-  statusMessage.textContent = "";
+  mediaRecorder.start();
+  await started;
+  await sleep(3000);
+  mediaRecorder.stop();
 }
 
 takePhotosBtn.addEventListener('click', () => {
