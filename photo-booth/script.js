@@ -143,7 +143,7 @@ async function recordBoomerang() {
       const FRAME_INTERVAL = 0.1; // seconds
       const DURATION = 3;
 
-      constconst captureFrameAt = (t) => {
+      const captureFrameAt = (t) => {
         return new Promise(resolve => {
           videoEl.currentTime = t;
       
