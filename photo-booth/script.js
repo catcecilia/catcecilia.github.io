@@ -207,7 +207,7 @@ async function recordBoomerang() {
     }
 
     gif.on('finished', function (gifBlob) {
-      statusMessage.textContent = "Download ready!";
+      statusMessage.textContent = "";
       const url = URL.createObjectURL(gifBlob);
       const a = document.createElement('a');
       a.href = url;
