@@ -200,20 +200,21 @@ async function recordBoomerang() {
       statusMessage.textContent = "Rendering...";
 
       gif.on('finished', function (gifBlob) {
+        statusMessage.textContent = "gifblob";
         const url = URL.createObjectURL(gifBlob);
         const a = document.createElement('a');
         a.href = url;
         a.download = 'boomerang.gif';
         a.style.display = 'none';
         document.body.appendChild(a);
+        statusMessage.textContent = "a";
         a.click();
         setTimeout(() => {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         }, 100);
-        statusMessage.textContent = "";
       });
-
+      statusMessage.textContent = "";
       gif.render();
     });
 
