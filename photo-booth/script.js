@@ -191,7 +191,9 @@ async function recordBoomerang() {
           };
 
           videoEl.addEventListener('seeked', seekHandler);
-          videoEl.currentTime = Math.min(t, videoEl.duration - 0.01);
+          let safeTime = t;
+          if (t >= videoEl.duration) safeTime = videoEl.duration - 0.05;
+          videoEl.currentTime = safeTime;
         });
       };
 
