@@ -110,9 +110,6 @@ async function recordBoomerang() {
 
   await countdown(3);
   statusMessage.textContent = "Recording...";
-  mediaRecorder.start();
-  await started;
-  await sleep(3000);
 
   mediaRecorder.onstop = async () => {
     statusMessage.textContent = "Rendering";
@@ -197,6 +194,16 @@ async function recordBoomerang() {
         });
       };
 
+      const started = new Promise(resolve => {
+        mediaRecorder.onstart = () => {
+          console.log("Recorder started");
+          resolve();
+        };
+      });
+      
+      mediaRecorder.start();
+      await sleep(3000);
+      mediaRecorder.stop();
       statusMessage.textContent = "Processing boomerang...";
 
       for (const t of boomerangTimes) {
