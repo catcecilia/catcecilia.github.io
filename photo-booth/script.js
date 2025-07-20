@@ -109,14 +109,13 @@ async function recordBoomerang() {
   mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
 
   await countdown(3);
-  statusMessage.textContent = "Recording";
+  statusMessage.textContent = "Recording...";
   mediaRecorder.start();
   await sleep(3000);
   mediaRecorder.stop();
   statusMessage.textContent = "";
 
   mediaRecorder.onstop = async () => {
-    statusMessage.textContent = "Processing";
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
     const videoURL = URL.createObjectURL(blob);
 
@@ -127,7 +126,7 @@ async function recordBoomerang() {
     videoEl.playsInline = true;
 
     videoEl.addEventListener('loadedmetadata', async () => {
-      // Detect portrait mode
+      // Portrait detection
       let isPortrait = false;
       if (screen.orientation && screen.orientation.angle !== undefined) {
         isPortrait = screen.orientation.angle === 0 || screen.orientation.angle === 180;
@@ -135,6 +134,7 @@ async function recordBoomerang() {
         isPortrait = window.innerHeight > window.innerWidth;
       }
 
+      // Canvas setup
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
 
@@ -155,22 +155,18 @@ async function recordBoomerang() {
       });
 
       const duration = videoEl.duration;
-      const frameRate = 20; // frames per second
+      const frameRate = 15;
       const totalFrames = Math.floor(duration * frameRate);
-
       const frameTimes = [];
       for (let i = 0; i < totalFrames; i++) {
         frameTimes.push(i / frameRate);
       }
       const boomerangTimes = frameTimes.concat([...frameTimes].reverse());
 
-      // Helper to capture frame at time `t`
       const captureFrameAt = (t) => {
         return new Promise((resolve) => {
-          videoEl.currentTime = t;
-          videoEl.onseeked = () => {
+          const seekHandler = () => {
             ctx.save();
-
             if (isPortrait) {
               ctx.translate(canvas.width / 2, canvas.height / 2);
               ctx.rotate(90 * Math.PI / 180);
@@ -184,19 +180,24 @@ async function recordBoomerang() {
             } else {
               ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
             }
-
             ctx.restore();
             gif.addFrame(ctx, { copy: true, delay: 1000 / frameRate });
+            videoEl.removeEventListener('seeked', seekHandler);
             resolve();
           };
+
+          videoEl.addEventListener('seeked', seekHandler);
+          videoEl.currentTime = Math.min(t, videoEl.duration - 0.01);
         });
       };
-      
+
+      statusMessage.textContent = "Processing boomerang...";
+
       for (const t of boomerangTimes) {
         await captureFrameAt(t);
       }
-      
-      statusMessage.textContent = "Rendering";
+
+      statusMessage.textContent = "Rendering...";
 
       gif.on('finished', function (gifBlob) {
         const url = URL.createObjectURL(gifBlob);
