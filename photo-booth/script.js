@@ -110,18 +110,11 @@ async function recordBoomerang() {
 
   await countdown(3);
   statusMessage.textContent = "Recording...";
+  mediaRecorder.start();
+  await sleep(3000);
+  mediaRecorder.stop();
 
-  // Wait for mediaRecorder to actually start
-  const started = new Promise(resolve => {
-    mediaRecorder.onstart = () => {
-      console.log("Recorder started");
-      resolve();
-    };
-  });
-
-  // Attach onstop BEFORE calling stop
   mediaRecorder.onstop = async () => {
-    console.log("Recorder stopped");
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
     const videoURL = URL.createObjectURL(blob);
 
@@ -131,120 +124,106 @@ async function recordBoomerang() {
     videoEl.muted = true;
     videoEl.playsInline = true;
 
-    videoEl.addEventListener('loadedmetadata', async () => {
-      // Portrait detection
-      let isPortrait = false;
-      if (window.screen && window.screen.orientation && window.screen.orientation.angle !== undefined) {
-        isPortrait = screen.orientation.angle === 0 || screen.orientation.angle === 180;
-      } else {
-        isPortrait = window.innerHeight > window.innerWidth;
-      }
+    document.body.appendChild(videoEl); // Required for requestVideoFrameCallback on some devices
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+    await videoEl.play(); // Trigger metadata load and allow frame capture
+    await sleep(100); // Allow video to start playing
 
-      if (isPortrait) {
-        canvas.width = videoEl.videoHeight;
-        canvas.height = videoEl.videoWidth;
-      } else {
-        canvas.width = videoEl.videoWidth;
-        canvas.height = videoEl.videoHeight;
-      }
+    // Detect portrait orientation
+    const isPortrait = window.innerHeight > window.innerWidth;
 
-      const gif = new GIF({
-        workers: 2,
-        quality: 10,
-        workerScript: 'libs/gif.worker.js',
-        width: canvas.width,
-        height: canvas.height
-      });
+    // Canvas setup
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
 
-      const duration = videoEl.duration;
-      const frameRate = 15;
-      const totalFrames = Math.floor(duration * frameRate);
-      const frameTimes = [];
-      for (let i = 0; i < totalFrames; i++) {
-        frameTimes.push(i / frameRate);
-      }
-      const boomerangTimes = frameTimes.concat([...frameTimes].reverse());
+    canvas.width = isPortrait ? videoEl.videoHeight : videoEl.videoWidth;
+    canvas.height = isPortrait ? videoEl.videoWidth : videoEl.videoHeight;
 
-      const captureFrameAt = (t) => {
-        return new Promise((resolve) => {
-          const seekHandler = () => {
-            ctx.save();
-            if (isPortrait) {
-              ctx.translate(canvas.width / 2, canvas.height / 2);
-              ctx.rotate(90 * Math.PI / 180);
-              ctx.drawImage(
-                videoEl,
-                -canvas.height / 2,
-                -canvas.width / 2,
-                canvas.height,
-                canvas.width
-              );
-            } else {
-              ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-            }
-            ctx.restore();
-            gif.addFrame(ctx, { copy: true, delay: 1000 / frameRate });
-            videoEl.removeEventListener('seeked', seekHandler);
-            resolve();
-          };
-
-          videoEl.addEventListener('seeked', seekHandler);
-          videoEl.currentTime = Math.min(t, videoEl.duration - 0.05);
-        });
-      };
-
-      statusMessage.textContent = "Processing boomerang...";
-
-      for (const t of boomerangTimes) {
-        console.log(`Capturing frame at ${t.toFixed(2)}s`);
-        await captureFrameAt(t);
-      }
-
-      statusMessage.textContent = "Rendering...";
-
-      gif.on('finished', function (gifBlob) {
-        statusMessage.textContent = "Download ready";
-        const url = URL.createObjectURL(gifBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'boomerang.gif';
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        }, 100);
-        statusMessage.textContent = "";
-      });
-      if (gif.frames.length === 0) {
-        console.error("No frames added to GIF. Aborting render.");
-        statusMessage.textContent = "Failed to render boomerang.";
-        return;
-      }
-      gif.render();
-      gif.on('abort', () => {
-        console.error("GIF rendering aborted");
-        statusMessage.textContent = "GIF render aborted.";
-      });
-      gif.on('error', (err) => {
-        console.error("GIF render error", err);
-        statusMessage.textContent = "GIF render error.";
-      });
+    const gif = new GIF({
+      workers: 2,
+      quality: 10,
+      workerScript: 'libs/gif.worker.js',
+      width: canvas.width,
+      height: canvas.height
     });
 
-    document.body.appendChild(videoEl);
-    videoEl.load();
-  };
+    gif.on('error', (err) => {
+      console.error("GIF render error", err);
+      statusMessage.textContent = "GIF render error.";
+    });
 
-  mediaRecorder.start();
-  await started;
-  await sleep(3000);
-  mediaRecorder.stop();
-}
+    gif.on('abort', () => {
+      console.error("GIF rendering aborted");
+      statusMessage.textContent = "GIF render aborted.";
+    });
+
+    const duration = videoEl.duration;
+    const frameRate = 15;
+    const totalFrames = Math.floor(duration * frameRate);
+    const frameTimes = [];
+    for (let i = 0; i < totalFrames; i++) {
+      frameTimes.push(i / frameRate);
+    }
+    const boomerangTimes = frameTimes.concat([...frameTimes].reverse());
+
+    statusMessage.textContent = "Processing boomerang...";
+
+    for (const t of boomerangTimes) {
+      await new Promise((resolve) => {
+        videoEl.currentTime = Math.min(t, duration - 0.05);
+
+        const handleSeeked = () => {
+          ctx.save();
+          if (isPortrait) {
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(90 * Math.PI / 180);
+            ctx.drawImage(
+              videoEl,
+              -canvas.height / 2,
+              -canvas.width / 2,
+              canvas.height,
+              canvas.width
+            );
+          } else {
+            ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+          }
+          ctx.restore();
+          gif.addFrame(ctx, { copy: true, delay: 1000 / frameRate });
+
+          videoEl.removeEventListener('seeked', handleSeeked);
+          resolve();
+        };
+
+        videoEl.addEventListener('seeked', handleSeeked);
+      });
+    }
+
+    statusMessage.textContent = "Rendering...";
+
+    if (gif.frames.length === 0) {
+      console.error("No frames captured");
+      statusMessage.textContent = "Failed to capture video frames.";
+      return;
+    }
+
+    gif.on('finished', function (gifBlob) {
+      statusMessage.textContent = "Download ready!";
+      const url = URL.createObjectURL(gifBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'boomerang.gif';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    });
+
+    gif.render();
+  };
+}}
 
 takePhotosBtn.addEventListener('click', () => {
   if (modeSelect.value === 'strip') {
