@@ -15,6 +15,10 @@ let qrCodeDiv = document.getElementById("qrcode");
 let qrCountdown = document.getElementById("qrCountdown");
 let closeQR = document.getElementById("closeQR");
 
+
+const modeSelect = document.getElementById("mode");
+const overlaySelectContainer = document.getElementById("overlaySelectContainer");
+
 let qrAutoCloseTimer;
 let qrCountdownInterval;
 
@@ -219,3 +223,15 @@ takePhotosBtn.addEventListener('click', async () => {
     await recordBoomerang();
   }
 });
+
+modeSelect.addEventListener("change", () => {
+  if (modeSelect.value === "boomerang") {
+    overlaySelectContainer.style.display = "none";
+  } else {
+    overlaySelectContainer.style.display = "block";
+  }
+});
+
+if (modeSelect.value === "boomerang") {
+  overlaySelectContainer.style.display = "none";
+}
