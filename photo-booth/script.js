@@ -9,7 +9,6 @@ const overlaySelectContainer = document.getElementById('overlaySelectContainer')
 const modeSelect = document.getElementById('mode');
 const flash = document.getElementById('flash');
 const statusMessage = document.getElementById('status');
-const qrContainer = document.getElementById('qrCodeContainer');
 const photoCtx = photoCanvas.getContext('2d');
 const printCtx = printCanvas.getContext('2d');
 
@@ -21,9 +20,6 @@ let mediaStream;
 let mediaRecorder;
 let recordedChunks = [];
 
-const CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/auto/upload";
-const UPLOAD_PRESET = "YOUR_UNSIGNED_UPLOAD_PRESET";
-
 navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
   mediaStream = stream;
   video.srcObject = stream;
@@ -33,7 +29,6 @@ modeSelect.addEventListener('change', () => {
   const isStrip = modeSelect.value === 'strip';
   overlaySelectContainer.style.display = isStrip ? 'block' : 'none';
   printButton.style.display = 'none';
-  qrContainer.innerHTML = '';
 });
 
 function sleep(ms) {
@@ -52,32 +47,6 @@ async function countdown(seconds) {
 function flashScreen() {
   flash.style.opacity = 1;
   setTimeout(() => flash.style.opacity = 0, 150);
-}
-
-async function uploadToCloudinary(blob, filename) {
-  const formData = new FormData();
-  formData.append('file', blob);
-  formData.append('upload_preset', UPLOAD_PRESET);
-  formData.append('public_id', filename);
-
-  try {
-    const response = await fetch(CLOUDINARY_UPLOAD_URL, {
-      method: 'POST',
-      body: formData,
-    });
-    const data = await response.json();
-    return data.secure_url;
-  } catch (e) {
-    console.error("Cloudinary upload failed", e);
-    return null;
-  }
-}
-
-function generateQR(link) {
-  qrContainer.innerHTML = '';
-  const img = new Image();
-  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(link)}`;
-  qrContainer.appendChild(img);
 }
 
 async function takePhotoStrip() {
@@ -108,16 +77,8 @@ async function takePhotoStrip() {
     photoCtx.drawImage(images[i], 0, 300 + i * SLOT_HEIGHT, STRIP_WIDTH, SLOT_HEIGHT);
   }
 
-  const blob = await new Promise(resolve => photoCanvas.toBlob(resolve, 'image/png'));
-  const cloudUrl = await uploadToCloudinary(blob, 'photo-strip');
-
-  if (cloudUrl) {
-    generateQR(cloudUrl);
-  }
-
-  // fallback + default
   const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
+  link.href = photoCanvas.toDataURL('image/png');
   link.download = 'photo-strip.png';
   link.click();
 
@@ -162,14 +123,19 @@ async function recordBoomerang() {
     videoEl.crossOrigin = "anonymous";
     videoEl.muted = true;
     videoEl.playsInline = true;
-    document.body.appendChild(videoEl);
-    await videoEl.play();
-    await sleep(100);
 
+    document.body.appendChild(videoEl); // Required for requestVideoFrameCallback on some devices
+
+    await videoEl.play(); // Trigger metadata load and allow frame capture
+    await sleep(100); // Allow video to start playing
+
+    // Detect portrait orientation
     const isPortrait = window.innerHeight > window.innerWidth;
 
+    // Canvas setup
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
+
     canvas.width = isPortrait ? videoEl.videoHeight : videoEl.videoWidth;
     canvas.height = isPortrait ? videoEl.videoWidth : videoEl.videoHeight;
 
@@ -181,10 +147,23 @@ async function recordBoomerang() {
       height: canvas.height
     });
 
+    gif.on('error', (err) => {
+      console.error("GIF render error", err);
+      statusMessage.textContent = "GIF render error.";
+    });
+
+    gif.on('abort', () => {
+      console.error("GIF rendering aborted");
+      statusMessage.textContent = "GIF render aborted.";
+    });
+
     const duration = videoEl.duration;
     const frameRate = 15;
     const totalFrames = Math.floor(duration * frameRate);
-    const frameTimes = Array.from({ length: totalFrames }, (_, i) => i / frameRate);
+    const frameTimes = [];
+    for (let i = 0; i < totalFrames; i++) {
+      frameTimes.push(i / frameRate);
+    }
     const boomerangTimes = frameTimes.concat([...frameTimes].reverse());
 
     statusMessage.textContent = "Processing boomerang...";
@@ -192,6 +171,7 @@ async function recordBoomerang() {
     for (const t of boomerangTimes) {
       await new Promise((resolve) => {
         videoEl.currentTime = Math.min(t, duration - 0.05);
+
         const handleSeeked = () => {
           ctx.save();
           if (isPortrait) {
@@ -209,27 +189,36 @@ async function recordBoomerang() {
           }
           ctx.restore();
           gif.addFrame(ctx, { copy: true, delay: 1000 / frameRate });
+
           videoEl.removeEventListener('seeked', handleSeeked);
           resolve();
         };
+
         videoEl.addEventListener('seeked', handleSeeked);
       });
     }
 
-    gif.on('finished', async function (gifBlob) {
+    statusMessage.textContent = "Rendering...";
+
+    if (gif.frames.length === 0) {
+      console.error("No frames captured");
+      statusMessage.textContent = "Failed to capture video frames.";
+      return;
+    }
+
+    gif.on('finished', function (gifBlob) {
       statusMessage.textContent = "";
-      const cloudUrl = await uploadToCloudinary(gifBlob, 'boomerang');
-
-      if (cloudUrl) {
-        generateQR(cloudUrl);
-      }
-
-      // fallback + default
       const url = URL.createObjectURL(gifBlob);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'boomerang.gif';
+      a.style.display = 'none';
+      document.body.appendChild(a);
       a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
     });
 
     gif.render();
@@ -237,7 +226,6 @@ async function recordBoomerang() {
 }
 
 takePhotosBtn.addEventListener('click', () => {
-  qrContainer.innerHTML = '';
   if (modeSelect.value === 'strip') {
     takePhotoStrip();
   } else {
