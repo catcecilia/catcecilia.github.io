@@ -1,4 +1,4 @@
-
+// DOM Elements
 let video = document.getElementById('video');
 let photoCanvas = document.getElementById('photoCanvas');
 let printCanvas = document.getElementById('printCanvas');
@@ -10,12 +10,10 @@ let flash = document.getElementById('flash');
 let takePhotosBtn = document.getElementById('takePhotos');
 let printButton = document.getElementById('printButton');
 const overlaySelectContainer = document.getElementById("overlaySelectContainer");
-
 let qrModal = document.getElementById("qrModal");
 let qrCodeDiv = document.getElementById("qrcode");
 let qrCountdown = document.getElementById("qrCountdown");
 let closeQR = document.getElementById("closeQR");
-
 
 let qrAutoCloseTimer;
 let qrCountdownInterval;
@@ -68,11 +66,16 @@ async function takePhotoStrip() {
   }
 
   overlay.onload = () => {
-    if (overlay.src.includes("none.png")) return;
-    ctx.drawImage(overlay, 0, 0, 600, 1800);
+    if (!overlay.src.includes("none.png")) {
+      ctx.drawImage(overlay, 0, 0, 600, 1800);
+    }
   };
 
   generatePrintLayout();
+
+  // Auto-download strip
+  downloadCanvas(photoCanvas, "photo-strip.png");
+
   await uploadImage(photoCanvas.toDataURL("image/png"));
 }
 
@@ -139,9 +142,13 @@ async function recordBoomerang() {
 
             if (boomerangVideo.ended) {
               clearInterval(reverseInterval);
-              gif.on('finished', blob => {
+              gif.on('finished', async blob => {
                 let url = URL.createObjectURL(blob);
-                uploadImage(url, "gif");
+
+                // Auto-download boomerang gif
+                downloadBlob(blob, "boomerang.gif");
+
+                await uploadImage(blob, "gif");
               });
               gif.render();
               resolve();
@@ -153,25 +160,50 @@ async function recordBoomerang() {
   });
 }
 
-async function uploadImage(dataURL, type = "png") {
-  showStatus("Uploading...");
+function downloadCanvas(canvas, filename) {
+  const link = document.createElement("a");
+  link.download = filename;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
 
+function downloadBlob(blob, filename) {
+  const link = document.createElement("a");
+  link.download = filename;
+  link.href = URL.createObjectURL(blob);
+  link.click();
+}
+
+async function uploadImage(file, type = "png") {
+  showStatus("Uploading...");
   const formData = new FormData();
-  formData.append("file", dataURL);
+
+  if (typeof file === "string") {
+    // base64 image
+    const res = await fetch(file);
+    file = await res.blob();
+  }
+
+  formData.append("file", file);
   formData.append("upload_preset", "YOUR_UNSIGNED_UPLOAD_PRESET");
 
-  const response = await fetch("https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload", {
-    method: "POST",
-    body: formData
-  });
+  try {
+    const response = await fetch("https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload", {
+      method: "POST",
+      body: formData
+    });
 
-  const result = await response.json();
-  hideStatus();
+    const result = await response.json();
+    hideStatus();
 
-  if (result.secure_url) {
-    generateQRCode(result.secure_url);
-  } else {
-    alert("Upload failed!");
+    if (result.secure_url) {
+      generateQRCode(result.secure_url);
+    } else {
+      console.warn("Upload failed (no secure_url). Skipping QR.");
+    }
+  } catch (err) {
+    hideStatus();
+    console.error("Upload failed:", err);
   }
 }
 
@@ -230,6 +262,7 @@ modeSelect.addEventListener("change", () => {
   }
 });
 
+// Initial state
 if (modeSelect.value === "boomerang") {
   overlaySelectContainer.style.display = "none";
 }
