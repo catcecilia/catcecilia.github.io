@@ -4,37 +4,39 @@
   <meta charset="UTF-8">
   <title>Photo Booth</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <!-- Bulma CSS CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="style.css">
-
-  <!-- QR Code library -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <script src="https://unpkg.com/cloudinary-core@2.11.4/cloudinary-core-shrinkwrap.min.js"></script>
 </head>
-<body class="has-background-light">
-
+<body class="has-background-white">
   <section class="section">
-    <div class="container has-text-centered">
-      <h1 class="title is-2">📸 Photo Booth</h1>
+    <div class="container">
+      <h1 class="title has-text-centered">📸 Photo Booth</h1>
 
-      <video id="video" autoplay playsinline class="mb-4" style="max-width:100%; border: 2px solid #ccc;"></video>
+      <div class="box has-background-white-ter">
+        <video id="video" autoplay playsinline class="is-block mx-auto"></video>
+        <div id="countdown" class="has-text-centered"></div>
+        <div id="status" class="has-text-centered"></div>
+        <div id="flash"></div>
+      </div>
 
-      <div id="countdown" class="has-text-weight-bold is-size-4 mb-3"></div>
-      <div id="status" class="notification is-info is-light is-hidden"></div>
-      <div id="flash" style="display:none;"></div>
-
-      <div class="field is-grouped is-justify-content-center mb-3">
+      <div class="field">
+        <label class="label">Mode:</label>
         <div class="control">
-          <div class="select">
+          <div class="select is-fullwidth">
             <select id="mode">
               <option value="strip">Photo Strip</option>
               <option value="boomerang">Boomerang</option>
             </select>
           </div>
         </div>
+      </div>
+
+      <div id="overlaySelectContainer" class="field">
+        <label class="label">Choose Template:</label>
         <div class="control">
-          <div class="select" id="overlaySelectContainer">
+          <div class="select is-fullwidth">
             <select id="overlaySelect">
               <option value="overlays/none.png">None</option>
               <option value="overlays/strip-template.png">Strip Template</option>
@@ -44,36 +46,31 @@
       </div>
 
       <div class="buttons is-centered">
-        <button id="takePhotos" class="button is-primary">Start</button>
-        <button id="printButton" class="button is-link is-hidden">Print 2 Copies</button>
+        <button id="takePhotos" class="button is-primary is-medium">Start</button>
+        <button id="printButton" class="button is-info is-medium" style="display:none;">Print 2 Copies</button>
       </div>
 
-      <canvas id="photoCanvas" width="600" height="1800" class="is-hidden"></canvas>
-      <canvas id="printCanvas" width="1200" height="1800" class="is-hidden"></canvas>
+      <canvas id="photoCanvas" width="600" height="1800"></canvas>
+      <canvas id="printCanvas" width="1200" height="1800"></canvas>
+
+      <!-- QR Modal -->
+      <div id="qrModal" class="modal">
+        <div class="modal-background"></div>
+        <div class="modal-content has-background-white p-4">
+          <div class="box">
+            <p class="title is-4 has-text-centered">Scan to download your photo!</p>
+            <div id="qrCode" class="has-text-centered mb-4"></div>
+            <p class="has-text-centered">This window will close in <span id="countdownTimer">60</span> seconds</p>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- QR Modal -->
-  <div id="qrModal" class="modal">
-    <div class="modal-background"></div>
-    <div class="modal-card">
-      <header class="modal-card-head">
-        <p class="modal-card-title">📲 Scan to Save</p>
-      </header>
-      <section class="modal-card-body has-text-centered">
-        <div id="qrcode" class="mb-3"></div>
-        <p id="qrCountdown">This window will close in 60 seconds.</p>
-      </section>
-      <footer class="modal-card-foot is-justify-content-center">
-        <button id="closeQR" class="button is-success">Done</button>
-      </footer>
-    </div>
-  </div>
-
+  <script src="script.js"></script>
   <script src="libs/gif.js"></script>
   <script>
     GIF.workerScript = 'libs/gif.worker.js';
   </script>
-  <script src="script.js"></script>
 </body>
 </html>
