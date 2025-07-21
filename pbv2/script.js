@@ -9,15 +9,13 @@ let status = document.getElementById('status');
 let flash = document.getElementById('flash');
 let takePhotosBtn = document.getElementById('takePhotos');
 let printButton = document.getElementById('printButton');
+const overlaySelectContainer = document.getElementById("overlaySelectContainer");
 
 let qrModal = document.getElementById("qrModal");
 let qrCodeDiv = document.getElementById("qrcode");
 let qrCountdown = document.getElementById("qrCountdown");
 let closeQR = document.getElementById("closeQR");
 
-
-const modeSelect = document.getElementById("mode");
-const overlaySelectContainer = document.getElementById("overlaySelectContainer");
 
 let qrAutoCloseTimer;
 let qrCountdownInterval;
