@@ -1,268 +1,248 @@
-// DOM Elements
-let video = document.getElementById('video');
-let photoCanvas = document.getElementById('photoCanvas');
-let printCanvas = document.getElementById('printCanvas');
-let modeSelect = document.getElementById('mode');
-let overlaySelect = document.getElementById('overlaySelect');
-let countdown = document.getElementById('countdown');
-let status = document.getElementById('status');
-let flash = document.getElementById('flash');
-let takePhotosBtn = document.getElementById('takePhotos');
-let printButton = document.getElementById('printButton');
-const overlaySelectContainer = document.getElementById("overlaySelectContainer");
-let qrModal = document.getElementById("qrModal");
-let qrCodeDiv = document.getElementById("qrcode");
-let qrCountdown = document.getElementById("qrCountdown");
-let closeQR = document.getElementById("closeQR");
+const video = document.getElementById('video');
+const countdownEl = document.getElementById('countdown');
+const takePhotosBtn = document.getElementById('takePhotos');
+const printButton = document.getElementById('printButton');
+const photoCanvas = document.getElementById('photoCanvas');
+const printCanvas = document.getElementById('printCanvas');
+const overlaySelect = document.getElementById('overlaySelect');
+const overlaySelectContainer = document.getElementById('overlaySelectContainer');
+const modeSelect = document.getElementById('mode');
+const flash = document.getElementById('flash');
+const statusMessage = document.getElementById('status');
+const qrContainer = document.getElementById('qrCodeContainer');
+const photoCtx = photoCanvas.getContext('2d');
+const printCtx = printCanvas.getContext('2d');
 
-let qrAutoCloseTimer;
-let qrCountdownInterval;
+const STRIP_WIDTH = 600;
+const STRIP_HEIGHT = 1800;
+const SLOT_HEIGHT = 400;
+
+let mediaStream;
+let mediaRecorder;
+let recordedChunks = [];
+
+const CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/auto/upload";
+const UPLOAD_PRESET = "YOUR_UNSIGNED_UPLOAD_PRESET";
 
 navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+  mediaStream = stream;
   video.srcObject = stream;
+}).catch(err => alert('Camera access is required.'));
+
+modeSelect.addEventListener('change', () => {
+  const isStrip = modeSelect.value === 'strip';
+  overlaySelectContainer.style.display = isStrip ? 'block' : 'none';
+  printButton.style.display = 'none';
+  qrContainer.innerHTML = '';
 });
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function showFlash() {
-  flash.style.display = 'block';
-  flash.style.position = 'fixed';
-  flash.style.top = 0;
-  flash.style.left = 0;
-  flash.style.width = '100%';
-  flash.style.height = '100%';
-  flash.style.backgroundColor = 'white';
-  flash.style.zIndex = 9999;
-  setTimeout(() => flash.style.display = 'none', 100);
+async function countdown(seconds) {
+  for (let i = seconds; i > 0; i--) {
+    countdownEl.textContent = i;
+    await sleep(1000);
+  }
+  countdownEl.textContent = '';
+  flashScreen();
 }
 
-function showStatus(msg) {
-  status.textContent = msg;
-  status.classList.remove("is-hidden");
+function flashScreen() {
+  flash.style.opacity = 1;
+  setTimeout(() => flash.style.opacity = 0, 150);
 }
 
-function hideStatus() {
-  status.classList.add("is-hidden");
+async function uploadToCloudinary(blob, filename) {
+  const formData = new FormData();
+  formData.append('file', blob);
+  formData.append('upload_preset', UPLOAD_PRESET);
+  formData.append('public_id', filename);
+
+  try {
+    const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await response.json();
+    return data.secure_url;
+  } catch (e) {
+    console.error("Cloudinary upload failed", e);
+    return null;
+  }
+}
+
+function generateQR(link) {
+  qrContainer.innerHTML = '';
+  const img = new Image();
+  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(link)}`;
+  qrContainer.appendChild(img);
 }
 
 async function takePhotoStrip() {
-  let ctx = photoCanvas.getContext('2d');
-  let overlay = new Image();
-  overlay.src = overlaySelect.value;
+  const images = [];
+  const tempCanvas = document.createElement('canvas');
+  const ctx = tempCanvas.getContext('2d');
+
+  tempCanvas.width = video.videoWidth;
+  tempCanvas.height = video.videoHeight;
 
   for (let i = 0; i < 3; i++) {
-    countdown.textContent = 3;
-    await sleep(1000);
-    countdown.textContent = 2;
-    await sleep(1000);
-    countdown.textContent = 1;
-    await sleep(1000);
-    countdown.textContent = '';
-    showFlash();
-    ctx.drawImage(video, 0, i * 600, 600, 600);
-    await sleep(500);
+    await countdown(3);
+    ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+    const img = new Image();
+    img.src = tempCanvas.toDataURL('image/png');
+    await new Promise(r => img.onload = r);
+    images.push(img);
   }
 
-  overlay.onload = () => {
-    if (!overlay.src.includes("none.png")) {
-      ctx.drawImage(overlay, 0, 0, 600, 1800);
-    }
-  };
+  const template = new Image();
+  template.src = overlaySelect.value;
+  await new Promise(r => template.onload = r);
 
-  generatePrintLayout();
+  photoCtx.clearRect(0, 0, STRIP_WIDTH, STRIP_HEIGHT);
+  photoCtx.drawImage(template, 0, 0, STRIP_WIDTH, STRIP_HEIGHT);
 
-  // Auto-download strip
-  downloadCanvas(photoCanvas, "photo-strip.png");
+  for (let i = 0; i < 3; i++) {
+    photoCtx.drawImage(images[i], 0, 300 + i * SLOT_HEIGHT, STRIP_WIDTH, SLOT_HEIGHT);
+  }
 
-  await uploadImage(photoCanvas.toDataURL("image/png"));
+  const blob = await new Promise(resolve => photoCanvas.toBlob(resolve, 'image/png'));
+  const cloudUrl = await uploadToCloudinary(blob, 'photo-strip');
+
+  if (cloudUrl) {
+    generateQR(cloudUrl);
+  }
+
+  // fallback + default
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'photo-strip.png';
+  link.click();
+
+  printButton.style.display = 'inline-block';
 }
 
-function generatePrintLayout() {
-  let printCtx = printCanvas.getContext('2d');
-  printCtx.fillStyle = "white";
-  printCtx.fillRect(0, 0, 1200, 1800);
-  printCtx.drawImage(photoCanvas, 0, 0, 600, 1800);
-  printCtx.drawImage(photoCanvas, 600, 0, 600, 1800);
-  printButton.classList.remove("is-hidden");
+function printTwoCopies() {
+  printCtx.clearRect(0, 0, 1200, 1800);
+  printCtx.drawImage(photoCanvas, 0, 0);
+  printCtx.drawImage(photoCanvas, 600, 0);
+
+  const win = window.open();
+  const img = new Image();
+  img.src = printCanvas.toDataURL('image/png');
+  img.onload = () => {
+    win.document.write(`<img src="${img.src}" style="width:100%;height:auto;">`);
+    win.document.close();
+    win.focus();
+    win.print();
+  };
 }
 
 async function recordBoomerang() {
-  let chunks = [];
-  let stream = video.captureStream();
-  let recorder = new MediaRecorder(stream);
-  recorder.ondataavailable = e => chunks.push(e.data);
+  recordedChunks = [];
+  const options = { mimeType: 'video/webm' };
+  mediaRecorder = new MediaRecorder(mediaStream, options);
 
-  countdown.textContent = "Recording...";
-  recorder.start();
+  mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
+
+  await countdown(3);
+  statusMessage.textContent = "Recording...";
+  mediaRecorder.start();
   await sleep(3000);
-  recorder.stop();
+  mediaRecorder.stop();
 
-  await new Promise(resolve => recorder.onstop = resolve);
-  countdown.textContent = "";
+  mediaRecorder.onstop = async () => {
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const videoURL = URL.createObjectURL(blob);
 
-  let blob = new Blob(chunks, { type: "video/webm" });
-  let videoURL = URL.createObjectURL(blob);
+    const videoEl = document.createElement('video');
+    videoEl.src = videoURL;
+    videoEl.crossOrigin = "anonymous";
+    videoEl.muted = true;
+    videoEl.playsInline = true;
+    document.body.appendChild(videoEl);
+    await videoEl.play();
+    await sleep(100);
 
-  let gif = new GIF({
-    workers: 2,
-    quality: 10,
-    width: 300,
-    height: 300
-  });
+    const isPortrait = window.innerHeight > window.innerWidth;
 
-  let boomerangVideo = document.createElement('video');
-  boomerangVideo.src = videoURL;
-  boomerangVideo.muted = true;
-  boomerangVideo.playbackRate = 2.0;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = isPortrait ? videoEl.videoHeight : videoEl.videoWidth;
+    canvas.height = isPortrait ? videoEl.videoWidth : videoEl.videoHeight;
 
-  await new Promise(resolve => {
-    boomerangVideo.onloadeddata = () => {
-      boomerangVideo.play();
-      let interval = setInterval(() => {
-        let tempCanvas = document.createElement("canvas");
-        tempCanvas.width = 300;
-        tempCanvas.height = 300;
-        tempCanvas.getContext("2d").drawImage(boomerangVideo, 0, 0, 300, 300);
-        gif.addFrame(tempCanvas, { delay: 80 });
-
-        if (boomerangVideo.ended) {
-          clearInterval(interval);
-          boomerangVideo.playbackRate = 2.0;
-          boomerangVideo.currentTime = 0;
-          boomerangVideo.play();
-
-          let reverseInterval = setInterval(() => {
-            let tempCanvas = document.createElement("canvas");
-            tempCanvas.width = 300;
-            tempCanvas.height = 300;
-            tempCanvas.getContext("2d").drawImage(boomerangVideo, 0, 0, 300, 300);
-            gif.addFrame(tempCanvas, { delay: 80 });
-
-            if (boomerangVideo.ended) {
-              clearInterval(reverseInterval);
-              gif.on('finished', async blob => {
-                let url = URL.createObjectURL(blob);
-
-                // Auto-download boomerang gif
-                downloadBlob(blob, "boomerang.gif");
-
-                await uploadImage(blob, "gif");
-              });
-              gif.render();
-              resolve();
-            }
-          }, 100);
-        }
-      }, 100);
-    };
-  });
-}
-
-function downloadCanvas(canvas, filename) {
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = canvas.toDataURL("image/png");
-  link.click();
-}
-
-function downloadBlob(blob, filename) {
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = URL.createObjectURL(blob);
-  link.click();
-}
-
-async function uploadImage(file, type = "png") {
-  showStatus("Uploading...");
-  const formData = new FormData();
-
-  if (typeof file === "string") {
-    // base64 image
-    const res = await fetch(file);
-    file = await res.blob();
-  }
-
-  formData.append("file", file);
-  formData.append("upload_preset", "YOUR_UNSIGNED_UPLOAD_PRESET");
-
-  try {
-    const response = await fetch("https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload", {
-      method: "POST",
-      body: formData
+    const gif = new GIF({
+      workers: 2,
+      quality: 10,
+      workerScript: 'libs/gif.worker.js',
+      width: canvas.width,
+      height: canvas.height
     });
 
-    const result = await response.json();
-    hideStatus();
+    const duration = videoEl.duration;
+    const frameRate = 15;
+    const totalFrames = Math.floor(duration * frameRate);
+    const frameTimes = Array.from({ length: totalFrames }, (_, i) => i / frameRate);
+    const boomerangTimes = frameTimes.concat([...frameTimes].reverse());
 
-    if (result.secure_url) {
-      generateQRCode(result.secure_url);
-    } else {
-      console.warn("Upload failed (no secure_url). Skipping QR.");
+    statusMessage.textContent = "Processing boomerang...";
+
+    for (const t of boomerangTimes) {
+      await new Promise((resolve) => {
+        videoEl.currentTime = Math.min(t, duration - 0.05);
+        const handleSeeked = () => {
+          ctx.save();
+          if (isPortrait) {
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(90 * Math.PI / 180);
+            ctx.drawImage(
+              videoEl,
+              -canvas.height / 2,
+              -canvas.width / 2,
+              canvas.height,
+              canvas.width
+            );
+          } else {
+            ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+          }
+          ctx.restore();
+          gif.addFrame(ctx, { copy: true, delay: 1000 / frameRate });
+          videoEl.removeEventListener('seeked', handleSeeked);
+          resolve();
+        };
+        videoEl.addEventListener('seeked', handleSeeked);
+      });
     }
-  } catch (err) {
-    hideStatus();
-    console.error("Upload failed:", err);
-  }
+
+    gif.on('finished', async function (gifBlob) {
+      statusMessage.textContent = "";
+      const cloudUrl = await uploadToCloudinary(gifBlob, 'boomerang');
+
+      if (cloudUrl) {
+        generateQR(cloudUrl);
+      }
+
+      // fallback + default
+      const url = URL.createObjectURL(gifBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'boomerang.gif';
+      a.click();
+    });
+
+    gif.render();
+  };
 }
 
-function generateQRCode(url) {
-  qrCodeDiv.innerHTML = "";
-  new QRCode(qrCodeDiv, {
-    text: url,
-    width: 200,
-    height: 200
-  });
-
-  qrModal.classList.add("is-active");
-
-  let timeLeft = 60;
-  qrCountdown.textContent = `This window will close in ${timeLeft} seconds.`;
-
-  clearTimeout(qrAutoCloseTimer);
-  clearInterval(qrCountdownInterval);
-
-  qrCountdownInterval = setInterval(() => {
-    timeLeft--;
-    qrCountdown.textContent = `This window will close in ${timeLeft} seconds.`;
-    if (timeLeft <= 0) clearInterval(qrCountdownInterval);
-  }, 1000);
-
-  qrAutoCloseTimer = setTimeout(() => {
-    closeQRModal();
-  }, 60000);
-}
-
-function closeQRModal() {
-  qrModal.classList.remove("is-active");
-  qrCodeDiv.innerHTML = "";
-  qrCountdown.textContent = "";
-  clearTimeout(qrAutoCloseTimer);
-  clearInterval(qrCountdownInterval);
-}
-
-closeQR.addEventListener("click", closeQRModal);
-
-takePhotosBtn.addEventListener('click', async () => {
-  printButton.classList.add("is-hidden");
-  let mode = modeSelect.value;
-  if (mode === "strip") {
-    await takePhotoStrip();
+takePhotosBtn.addEventListener('click', () => {
+  qrContainer.innerHTML = '';
+  if (modeSelect.value === 'strip') {
+    takePhotoStrip();
   } else {
-    await recordBoomerang();
+    recordBoomerang();
   }
 });
 
-modeSelect.addEventListener("change", () => {
-  if (modeSelect.value === "boomerang") {
-    overlaySelectContainer.style.display = "none";
-  } else {
-    overlaySelectContainer.style.display = "block";
-  }
-});
-
-// Initial state
-if (modeSelect.value === "boomerang") {
-  overlaySelectContainer.style.display = "none";
-}
+printButton.addEventListener('click', printTwoCopies);
