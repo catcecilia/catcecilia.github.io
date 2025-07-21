@@ -1,0 +1,9 @@
+.modal-card {
+  max-width: 400px;
+  margin: auto;
+}
+
+#photoCanvas, #printCanvas {
+  display: block;
+  margin: 0 auto;
+}
