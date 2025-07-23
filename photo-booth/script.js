@@ -129,8 +129,17 @@ async function recordBoomerang() {
 
     document.body.appendChild(videoEl); // Required for requestVideoFrameCallback on some devices
 
-    await videoEl.play();
-    await sleep(100);
+    await new Promise(resolve => {
+    videoEl.onloadedmetadata = () => resolve();
+      });
+
+    const duration = videoEl.duration;
+    if (!duration || isNaN(duration) || !isFinite(duration)) {
+      console.error("Invalid video duration", duration);
+      statusMessage.textContent = "Video metadata not available.";
+      return;
+    }
+
 
     const isPortrait = window.innerHeight > window.innerWidth;
 
@@ -157,7 +166,6 @@ async function recordBoomerang() {
       statusMessage.textContent = "GIF render aborted.";
     });
 
-    const duration = videoEl.duration;
     const frameRate = 15;
     const totalFrames = Math.floor(duration * frameRate);
     const frameTimes = [];
