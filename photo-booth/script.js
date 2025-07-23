@@ -103,7 +103,10 @@ function printTwoCopies() {
 
 async function recordBoomerang() {
   recordedChunks = [];
-  const options = { mimeType: 'video/webm' };
+  let options = {};
+  if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+    options.mimeType = 'video/webm;codecs=vp8';
+  }
   mediaRecorder = new MediaRecorder(mediaStream, options);
 
   mediaRecorder.ondataavailable = e => {
@@ -115,7 +118,7 @@ async function recordBoomerang() {
 
   mediaRecorder.onstop = async () => {
     console.log("recordedChunks:", recordedChunks);
-    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const blob = new Blob(recordedChunks, { type: recordedChunks[0].type });
     const videoURL = URL.createObjectURL(blob);
 
     const videoEl = document.createElement('video');
