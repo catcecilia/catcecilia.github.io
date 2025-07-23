@@ -108,12 +108,6 @@ async function recordBoomerang() {
 
   mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
 
-  await countdown(3);
-  statusMessage.textContent = "Recording...";
-  mediaRecorder.start();
-  await sleep(3000);
-  mediaRecorder.stop();
-
   mediaRecorder.onstop = async () => {
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
     const videoURL = URL.createObjectURL(blob);
@@ -126,16 +120,13 @@ async function recordBoomerang() {
 
     document.body.appendChild(videoEl); // Required for requestVideoFrameCallback on some devices
 
-    await videoEl.play(); // Trigger metadata load and allow frame capture
-    await sleep(100); // Allow video to start playing
+    await videoEl.play();
+    await sleep(100);
 
-    // Detect portrait orientation
     const isPortrait = window.innerHeight > window.innerWidth;
 
-    // Canvas setup
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-
     canvas.width = isPortrait ? videoEl.videoHeight : videoEl.videoWidth;
     canvas.height = isPortrait ? videoEl.videoWidth : videoEl.videoHeight;
 
@@ -147,7 +138,7 @@ async function recordBoomerang() {
       height: canvas.height
     });
 
-    gif.on('error', (err) => {
+    gif.on('error', err => {
       console.error("GIF render error", err);
       statusMessage.textContent = "GIF render error.";
     });
@@ -223,7 +214,14 @@ async function recordBoomerang() {
 
     gif.render();
   };
+
+  await countdown(3);
+  statusMessage.textContent = "Recording...";
+  mediaRecorder.start();
+  await sleep(3000);
+  mediaRecorder.stop();
 }
+
 
 takePhotosBtn.addEventListener('click', () => {
   if (modeSelect.value === 'strip') {
