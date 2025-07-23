@@ -106,9 +106,15 @@ async function recordBoomerang() {
   const options = { mimeType: 'video/webm' };
   mediaRecorder = new MediaRecorder(mediaStream, options);
 
-  mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
+  mediaRecorder.ondataavailable = e => {
+    if (e.data && e.data.size > 0) {
+      recordedChunks.push(e.data);
+    }
+  };
+  
 
   mediaRecorder.onstop = async () => {
+    console.log("recordedChunks:", recordedChunks);
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
     const videoURL = URL.createObjectURL(blob);
 
