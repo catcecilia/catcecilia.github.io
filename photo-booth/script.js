@@ -103,49 +103,42 @@ function printTwoCopies() {
 
 async function recordBoomerang() {
   recordedChunks = [];
+
   let options = {};
   if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
     options.mimeType = 'video/webm;codecs=vp8';
   } else {
-    alert("Your browser doesn't support VP8 encoding needed for boomerangs.");
+    alert("VP8 codec not supported in this browser.");
     return;
   }
-  mediaRecorder = new MediaRecorder(mediaStream, options);
 
+  mediaRecorder = new MediaRecorder(mediaStream, options);
   mediaRecorder.ondataavailable = e => {
-    if (e.data && e.data.size > 0) {
-      recordedChunks.push(e.data);
-    }
+    if (e.data && e.data.size > 0) recordedChunks.push(e.data);
   };
-  
 
   mediaRecorder.onstop = async () => {
-    console.log("recordedChunks:", recordedChunks);
     const blob = new Blob(recordedChunks, { type: recordedChunks[0].type });
     const videoURL = URL.createObjectURL(blob);
-
     const videoEl = document.createElement('video');
     videoEl.src = videoURL;
     videoEl.crossOrigin = "anonymous";
     videoEl.muted = true;
     videoEl.playsInline = true;
-
-    document.body.appendChild(videoEl); // Required for requestVideoFrameCallback on some devices
+    document.body.appendChild(videoEl);
 
     await new Promise(resolve => {
-    videoEl.onloadedmetadata = () => resolve();
-      });
+      videoEl.onloadedmetadata = resolve;
+    });
 
     const duration = videoEl.duration;
     if (!duration || isNaN(duration) || !isFinite(duration)) {
-      console.error("Invalid video duration", duration);
-      statusMessage.textContent = "Video metadata not available.";
+      console.error("Invalid video duration:", duration);
+      statusMessage.textContent = "Failed to read video duration.";
       return;
     }
 
-
     const isPortrait = window.innerHeight > window.innerWidth;
-
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = isPortrait ? videoEl.videoHeight : videoEl.videoWidth;
@@ -180,31 +173,27 @@ async function recordBoomerang() {
     statusMessage.textContent = "Processing boomerang...";
 
     for (const t of boomerangTimes) {
-      await new Promise((resolve) => {
+      await new Promise(resolve => {
         videoEl.currentTime = Math.min(t, duration - 0.05);
-
         const handleSeeked = () => {
           ctx.save();
           if (isPortrait) {
             ctx.translate(canvas.width / 2, canvas.height / 2);
             ctx.rotate(90 * Math.PI / 180);
-            ctx.drawImage(
-              videoEl,
-              -canvas.height / 2,
-              -canvas.width / 2,
-              canvas.height,
-              canvas.width
-            );
+            ctx.drawImage(videoEl, -canvas.height / 2, -canvas.width / 2, canvas.height, canvas.width);
           } else {
             ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
           }
           ctx.restore();
-          gif.addFrame(ctx, { copy: true, delay: 1000 / frameRate });
-
+          try {
+            gif.addFrame(ctx, { copy: true, delay: 1000 / frameRate });
+          } catch (err) {
+            console.error("addFrame failed", err);
+            return;
+          }
           videoEl.removeEventListener('seeked', handleSeeked);
           resolve();
         };
-
         videoEl.addEventListener('seeked', handleSeeked);
       });
     }
@@ -241,7 +230,6 @@ async function recordBoomerang() {
   await sleep(3000);
   mediaRecorder.stop();
 }
-
 
 takePhotosBtn.addEventListener('click', () => {
   if (modeSelect.value === 'strip') {
