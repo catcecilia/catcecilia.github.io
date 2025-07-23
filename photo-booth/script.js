@@ -106,6 +106,9 @@ async function recordBoomerang() {
   let options = {};
   if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
     options.mimeType = 'video/webm;codecs=vp8';
+  } else {
+    alert("Your browser doesn't support VP8 encoding needed for boomerangs.");
+    return;
   }
   mediaRecorder = new MediaRecorder(mediaStream, options);
 
