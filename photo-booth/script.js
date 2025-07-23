@@ -131,11 +131,9 @@ async function recordBoomerang() {
       videoEl.onloadedmetadata = resolve;
     });
 
-    const duration = videoEl.duration;
+    let duration = videoEl.duration;
     if (!duration || isNaN(duration) || !isFinite(duration)) {
-      console.error("Invalid video duration:", duration);
-      statusMessage.textContent = "Failed to read video duration.";
-      return;
+      duration = 3;
     }
 
     const isPortrait = window.innerHeight > window.innerWidth;
