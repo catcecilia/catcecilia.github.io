@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Auto Close About:Blank Tabs",
+  "version": "1.0",
+  "description": "Automatically closes about:blank tabs after 3 seconds.",
+  "permissions": ["tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_title": "AutoClose About:Blank"
+  }
+}
