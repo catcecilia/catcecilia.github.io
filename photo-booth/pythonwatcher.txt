@@ -1,6 +1,5 @@
 import os
 import tkinter as tk
-from tkinter import filedialog
 from PIL import Image, ImageTk
 import qrcode
 import cloudinary
@@ -8,6 +7,12 @@ import cloudinary.uploader
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import time
+import threading
+
+# ---------- Config ----------
+WATCH_FOLDER = r"FILEPATH" 
+DISPLAY_DURATION = 30  # seconds
+
 
 # ---------- Cloudinary Signed Upload Config ----------
 cloudinary.config(
@@ -18,13 +23,15 @@ cloudinary.config(
 
 # ---------- Watchdog Event Handler ----------
 class FolderWatcher(FileSystemEventHandler):
-    def __init__(self, folder, on_new_file):
-        self.folder = folder
+    def __init__(self, on_new_file):
         self.on_new_file = on_new_file
+        self.seen_files = set()
 
     def handle_file_event(self, path):
         if path.lower().endswith(('.png', '.gif')):
-            self.on_new_file(path)
+            if path not in self.seen_files:
+                self.seen_files.add(path)
+                threading.Thread(target=self.on_new_file, args=(path,), daemon=True).start()
 
     def on_created(self, event):
         if not event.is_directory:
@@ -34,149 +41,86 @@ class FolderWatcher(FileSystemEventHandler):
         if not event.is_directory:
             self.handle_file_event(event.dest_path)
 
-    def on_modified(self, event):
-        if not event.is_directory:
-            self.handle_file_event(event.src_path)
+# ---------- QR Popup ----------
+def show_qr_popup(url):
+    def on_timer_end():
+        root.destroy()
 
+    root = tk.Tk()
+    root.title("Scan to Download")
+    root.geometry("350x420")
+    root.configure(bg="white")
 
-# ---------- QR App ----------
-class QRApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("QR Display")
-        self.root.geometry("400x400")
-        self.root.configure(bg="white")
+    # Always on Top
+    root.attributes("-topmost", True)     # Always on top
+    root.lift()                           # Bring to front
+    root.focus_force()                    # Focus window (optional, helps with some window managers)
 
-        self.folder = ''
-        self.timer = None
-        self.countdown_id = None
+    # Message
+    message_label = tk.Label(root, text="Scan QR code for a copy", font=("Arial", 14), bg="white")
+    message_label.pack(pady=(10, 5))
 
-        self.init_screen1()
-        self.init_screen2()
+    # QR Image
+    qr = qrcode.make(url).resize((300, 300))
+    qr_img = ImageTk.PhotoImage(qr)
+    qr_label = tk.Label(root, image=qr_img, bg="white")
+    qr_label.image = qr_img
+    qr_label.pack(pady=(0, 5))
 
-        self.show_screen1()
+    # Countdown Label
+    countdown_label = tk.Label(root, text="", font=("Arial", 12), bg="white")
+    countdown_label.pack(pady=(0, 10))
 
-    # Screen 1: Folder Select
-    def init_screen1(self):
-        self.screen1 = tk.Frame(self.root, bg="white")
-        self.select_btn = tk.Button(
-            self.screen1,
-            text="Select Folder to Watch",
-            font=("Arial", 16),
-            command=self.select_folder
-        )
-        self.select_btn.pack(expand=True)
-
-    # Screen 2: QR Display
-    def init_screen2(self):
-        self.screen2 = tk.Frame(self.root, bg="white")
-        self.qr_label = tk.Label(self.screen2, bg="white")
-        self.qr_label.pack(expand=True)
-
-        self.countdown_label = tk.Label(self.screen2, text="", font=("Arial", 12), bg="white")
-        self.countdown_label.pack(pady=10)
-
-    def show_screen1(self):
-        self.screen2.pack_forget()
-        self.screen1.pack(fill="both", expand=True)
-
-    def show_screen2(self):
-        self.screen1.pack_forget()
-        self.screen2.pack(fill="both", expand=True)
-
-    def select_folder(self):
-        folder = filedialog.askdirectory()
-        if folder:
-            self.folder = folder
-            self.start_folder_watch()
-            self.show_screen2()
-
-    def start_folder_watch(self):
-        self.event_handler = FolderWatcher(self.folder, self.handle_new_file)
-        self.observer = Observer()
-        self.observer.schedule(self.event_handler, self.folder, recursive=False)
-        self.observer.start()
-
-    def handle_new_file(self, filepath):
-        print(f"Detected: {filepath}")
-        self.clear_timer()
-
-        # Wait until file is stable (not changing size)
-        if self.wait_until_file_is_ready(filepath):
-            url = self.upload_to_cloudinary(filepath)
-            if url:
-                self.display_qr_code(url)
-                self.set_clear_timer()
+    def update_countdown(seconds_left):
+        if seconds_left <= 0:
+            root.after(0, on_timer_end)
         else:
-            print(f"File {filepath} was not ready after timeout.")
+            countdown_label.config(text=f"QR closes in {seconds_left}s")
+            root.after(1000, update_countdown, seconds_left - 1)
 
-    def wait_until_file_is_ready(self, filepath, timeout=10, interval=0.5):
-        """Waits until file size stops changing (max timeout)."""
-        previous_size = -1
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            try:
-                current_size = os.path.getsize(filepath)
-                if current_size == previous_size:
-                    return True
-                previous_size = current_size
-            except OSError:
-                pass  # File may not exist yet
-            time.sleep(interval)
-        return False
+    update_countdown(DISPLAY_DURATION)
+    root.mainloop()
 
-    # ✅ Cloudinary signed upload
-    def upload_to_cloudinary(self, filepath):
+# ---------- File Handler ----------
+def handle_new_file(filepath):
+    print(f"[+] Detected new file: {filepath}")
+
+    if wait_until_file_is_ready(filepath):
         try:
             result = cloudinary.uploader.upload(filepath)
-            return result.get("secure_url")
+            url = result.get("secure_url")
+            print(f"[✓] Uploaded to: {url}")
+            show_qr_popup(url)
         except Exception as e:
             print("Upload failed:", e)
-            return None
+    else:
+        print(f"[-] File {filepath} was not stable in time.")
 
-    def display_qr_code(self, url):
-        qr = qrcode.make(url)
-        qr = qr.resize((300, 300))
-        qr_img = ImageTk.PhotoImage(qr)
-        self.qr_label.config(image=qr_img)
-        self.qr_label.image = qr_img
+def wait_until_file_is_ready(filepath, timeout=10, interval=0.5):
+    previous_size = -1
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            current_size = os.path.getsize(filepath)
+            if current_size == previous_size:
+                return True
+            previous_size = current_size
+        except OSError:
+            pass
+        time.sleep(interval)
+    return False
 
-    def clear_qr_code(self):
-        self.qr_label.config(image='')
-        self.qr_label.image = None
-        print("QR code cleared")
-
-    def set_clear_timer(self):
-        self.timer = self.root.after(30000, self.clear_qr_code)
-
-    def clear_timer(self):
-        if self.timer:
-            self.root.after_cancel(self.timer)
-            self.timer = None
-
-    def start_countdown(self, seconds):
-        self.update_countdown_label(seconds)
-
-    def update_countdown_label(self, remaining):
-        if remaining <= 0:
-            self.countdown_label.config(text="")
-            return
-        self.countdown_label.config(text=f"QR expires in {remaining} seconds")
-        self.countdown_id = self.root.after(1000, self.update_countdown_label, remaining - 1)
-
-    def cancel_countdown(self):
-        if self.countdown_id:
-            self.root.after_cancel(self.countdown_id)
-            self.countdown_id = None
-            self.countdown_label.config(text="")
-            
-# ---------- Run App ----------
+# ---------- Main ----------
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = QRApp(root)
+    print(f"[*] Watching folder: {WATCH_FOLDER}")
+    event_handler = FolderWatcher(handle_new_file)
+    observer = Observer()
+    observer.schedule(event_handler, WATCH_FOLDER, recursive=False)
+    observer.start()
+
     try:
-        root.mainloop()
-    finally:
-        if hasattr(app, 'observer'):
-            app.observer.stop()
-            app.observer.join()
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+    observer.join()
