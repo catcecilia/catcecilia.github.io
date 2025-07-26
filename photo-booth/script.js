@@ -83,9 +83,14 @@ async function takePhotoStrip() {
   link.click();
 
   printButton.style.display = 'inline-block';
+
+  countdownEl.textContent = 'Processing...';
+  await sleep(5000);
+  countdownEl.textContent = '';
 }
 
 function printTwoCopies() {
+  countdownEl.textContent = 'Printing now!';
   printCtx.clearRect(0, 0, 1200, 1800);
   printCtx.drawImage(photoCanvas, 0, 0);
   printCtx.drawImage(photoCanvas, 600, 0);
@@ -98,6 +103,10 @@ function printTwoCopies() {
     win.document.close();
     win.focus();
     win.print();
+
+    setTimeout(() => {
+      countdownEl.textContent = '';
+      }, 5000);
   };
 }
 
