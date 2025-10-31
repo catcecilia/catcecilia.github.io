@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sewing Machine Service Invoice</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for print media and general aesthetics */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                color: #000;
+                background-color: #fff;
+            }
+            .document-card {
+                box-shadow: none !important;
+                border: none !import;
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+            }
+            /* Ensure inputs are visible for printing */
+            input[type="text"], textarea {
+                border-bottom: 1px solid #333 !important;
+                border-top: none !important;
+                border-left: none !important;
+                border-right: none !important;
+                padding: 0 4px !important;
+            }
+            /* Hide save button when printing */
+            .no-print {
+                display: none;
+            }
+        }
+
+        /* Set default font to Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+            color: #1f2937;
+        }
+        /* Custom border for checklist items */
+        .checklist-item {
+            border-bottom: 1px dashed #d1d5db;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#2563eb', /* A professional, trustworthy blue */
+                        'secondary-gray': '#4b5563',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="p-4 md:p-8">
+    <div class="document-card bg-white shadow-2xl rounded-2xl p-6 md:p-10 mx-auto max-w-5xl border border-gray-100">
+
+        <!-- SAVE DIGITAL COPY SCRIPT -->
+        <script>
+            /**
+             * Extracts form data and formats it for digital archiving in a text file.
+             * @param {Event} event - The form submission event.
+             */
+            function saveDigitalCopy(event) {
+                event.preventDefault();
+
+                const form = event.target.closest('form');
+                if (!form) return;
+
+                const fields = form.querySelectorAll('input, textarea');
+                let output = "--- SEWING MACHINE SERVICE INVOICE DIGITAL ARCHIVE ---\n\n";
+
+                // Map elements to their display labels
+                const labels = {
+                    'InvoiceNum': 'Invoice #',
+                    'DateInvoice': 'Date of Invoice:',
+                    'DateSubmitted': 'Date Submitted:',
+                    'DateServiced': 'Date Serviced:',
+                    'DatePaid': 'Date Paid:',
+                    'CustName': 'Customer Name:',
+                    'CustPhone': 'Customer Phone:',
+                    'CustEmail': 'Customer Email:',
+                    'MachineMake': 'Machine Make:',
+                    'MachineModel': 'Machine Model:',
+                    'SerialNum': 'Serial #:',
+                    'ReasonForService': 'Reason for Service (Customer Reported):',
+                    'ItemsBroughtIn': 'Items Brought In (Accessories):',
+                    'PartsPurchased': '--- PARTS PURCHASED / REPAIRS ---',
+                    'ShopHours': 'Shop Hours:',
+                    'CostParts': 'Part Replacement Cost:',
+                    'CostMaterials': 'Materials/Supply Fee:',
+                    'Subtotal': 'Subtotal:',
+                    'Tax': 'Sales Tax:',
+                    'TotalDue': 'TOTAL DUE:',
+                    'PaymentNotes': '--- PAYMENT & NOTES ---',
+                };
+
+                // Extract all input values
+                fields.forEach(field => {
+                    const name = field.name || field.id;
+                    const label = labels[name] || name;
+                    let value = '';
+
+                    if (field.type === 'checkbox') {
+                        value = field.checked ? '[X]' : '[ ]';
+                        // For checkboxes, use the text content of the parent label as the label
+                        const itemLabel = field.closest('label').querySelector('span').textContent.trim();
+                        output += `${value} ${itemLabel}\n`;
+                    } else if (field.type === 'text' || field.type === 'number' || field.tagName === 'TEXTAREA') {
+                        value = field.value.replace(/\n/g, '\n    '); // Indent multiline notes
+
+                        if (name === 'PartsPurchased' || name === 'PaymentNotes') {
+                            output += `\n${label}\n${'='.repeat(label.length)}\n    ${value}\n\n`;
+                        } else if (name === 'ItemsBroughtIn') {
+                            output += `${label}: ${value}\n\n--- SERVICE CHECKLIST ---\n`;
+                        } else if (name === 'SerialNum') {
+                             output += `${label}: ${value}\n\n`;
+                        } else {
+                            output += `${label}: ${value}\n`;
+                        }
+                    }
+                });
+                
+                // Add totals
+                output += "\n--- COST BREAKDOWN ---\n";
+                output += `Shop Hours: ${form.querySelector('[name="ShopHours"]').value}\n`;
+                output += `Part Replacement: ${form.querySelector('[name="CostParts"]').value}\n`;
+                output += `Materials/Supply Fee: ${form.querySelector('[name="CostMaterials"]').value}\n`;
+                output += `Subtotal: ${form.querySelector('[name="Subtotal"]').value}\n`;
+                output += `Tax: ${form.querySelector('[name="Tax"]').value}\n`;
+                output += `TOTAL DUE: ${form.querySelector('[name="TotalDue"]').value}\n`;
+
+                // Generate filename based on date and machine model
+                const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+                const model = form.querySelector('[name="MachineModel"]').value.replace(/[^a-zA-Z0-9]/g, '_') || 'UnknownModel';
+                const filename = `Invoice_${model}_${date}.txt`;
+
+                // Create and download the file
+                const blob = new Blob([output], { type: 'text/plain' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        </script>
+
+        <form onsubmit="saveDigitalCopy(event)">
+            <button type="submit" class="no-print bg-primary-blue text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-150 absolute top-4 right-4 text-sm">
+                Save Digital Copy (.txt)
+            </button>
+
+            <!-- HEADER AND BUSINESS INFO -->
+            <header class="flex flex-col sm:flex-row justify-between items-start mb-8 border-b-4 border-primary-blue pb-4">
+                <div class="space-y-1">
+                    <h1 class="text-4xl font-extrabold text-primary-blue tracking-tight">SERVICE INVOICE</h1>
+                    <p class="text-lg text-secondary-gray font-semibold">Sewing Machine Service & Repair</p>
+                </div>
+                <div class="mt-4 sm:mt-0 text-right space-y-1 text-sm text-gray-600">
+                    <p class="text-xl font-bold text-primary-blue">Baybrook & Co</p>
+                    <p>Invoice #: <input type="text" name="InvoiceNum" id="InvoiceNum" value="INV-2025-" class="border-b border-gray-300 w-32 p-1 focus:border-primary-blue focus:outline-none"></p>
+                    <p>Date of Invoice: <input type="text" name="DateInvoice" id="DateInvoice" class="border-b border-gray-300 w-32 p-1 focus:border-primary-blue focus:outline-none" placeholder="YYYY-MM-DD"></p>
+                </div>
+            </header>
+
+            <!-- CUSTOMER & MACHINE DETAILS -->
+            <section class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Customer Info -->
+                <div class="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
+                    <h2 class="text-base font-bold text-secondary-gray mb-3 border-b pb-1">CUSTOMER INFORMATION</h2>
+                    <div class="space-y-2 text-sm">
+                        <p>Name: <input type="text" name="CustName" id="CustName" class="border-b border-gray-300 w-full p-1 focus:border-primary-blue focus:outline-none" placeholder="Jane Doe"></p>
+                        <p>Phone: <input type="text" name="CustPhone" id="CustPhone" class="border-b border-gray-300 w-full p-1 focus:border-primary-blue focus:outline-none" placeholder="(555) 123-4567"></p>
+                        <p>Email: <input type="text" name="CustEmail" id="CustEmail" class="border-b border-gray-300 w-full p-1 focus:border-primary-blue focus:outline-none" placeholder="jane.doe@example.com"></p>
+                    </div>
+                </div>
+                
+                <!-- Machine Details -->
+                <div class="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
+                    <h2 class="text-base font-bold text-secondary-gray mb-3 border-b pb-1">SEWING MACHINE DETAILS</h2>
+                    <div class="space-y-2 text-sm">
+                        <p>Make: <input type="text" name="MachineMake" id="MachineMake" class="border-b border-gray-300 w-full p-1 focus:border-primary-blue focus:outline-none" placeholder="Brother / Janome"></p>
+                        <p>Model: <input type="text" name="MachineModel" id="MachineModel" class="border-b border-gray-300 w-full p-1 focus:border-primary-blue focus:outline-none" placeholder="Innov-is BQ3100"></p>
+                        <p>Serial #: <input type="text" name="SerialNum" id="SerialNum" class="border-b border-gray-300 w-full p-1 focus:border-primary-blue focus:outline-none" placeholder="A1B2C3D4"></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SERVICE DATES & DETAILS -->
+            <section class="mb-8 p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
+                <h2 class="text-base font-bold text-secondary-gray mb-3 border-b pb-1">SERVICE DETAILS</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <label class="block font-medium mb-1">Date Submitted:</label>
+                        <input type="text" name="DateSubmitted" id="DateSubmitted" class="border border-gray-300 rounded-md w-full p-2 focus:border-primary-blue focus:ring-1 focus:ring-primary-blue" placeholder="YYYY-MM-DD">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Date Serviced:</label>
+                        <input type="text" name="DateServiced" id="DateServiced" class="border border-gray-300 rounded-md w-full p-2 focus:border-primary-blue focus:ring-1 focus:ring-primary-blue" placeholder="YYYY-MM-DD">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Date Paid:</label>
+                        <input type="text" name="DatePaid" id="DatePaid" class="border border-gray-300 rounded-md w-full p-2 focus:border-primary-blue focus:ring-1 focus:ring-primary-blue" placeholder="YYYY-MM-DD">
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label class="block font-medium mb-1 text-sm">Reason for Service (Customer Reported):</label>
+                    <input type="text" name="ReasonForService" id="ReasonForService" class="border-b border-gray-300 w-full p-1 focus:border-primary-blue focus:outline-none" placeholder="e.g., Skipped stitches and nesting in the bobbin area.">
+                </div>
+                <div class="mt-4">
+                    <label classs="block font-medium mb-1 text-sm">Items Brought In (Accessories):</label>
+                    <input type="text" name="ItemsBroughtIn" id="ItemsBroughtIn" class="border-b border-gray-300 w-full p-1 focus:border-primary-blue focus:outline-none" placeholder="e.g., Foot Pedal, Power Cord, #37D foot.">
+                </div>
+            </section>
+
+            <!-- SERVICE CHECKLIST - 2 COLUMNS ON MD SCREEN AND UP -->
+            <section class="mb-10">
+                <h2 class="text-xl font-bold text-primary-blue mb-4 pb-1 border-b-2 border-primary-blue">SERVICE CHECKLIST & RECORD</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <!-- COLUMN 1: INSPECTION & CLEANING -->
+                    <div>
+                        <!-- EXTERNAL INSPECTION -->
+                        <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 class="text-lg font-semibold text-secondary-gray mb-3 border-b pb-1">EXTERNAL INSPECTION</h3>
+                            <div class="space-y-1 text-sm">
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Note any blemishes, wear, etc.</span> <input type="checkbox" name="Checklist_External_Blemishes" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Spool pins / Knobs in place</span> <input type="checkbox" name="Checklist_External_SpoolPins" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Broken parts / Damage assessment</span> <input type="checkbox" name="Checklist_External_Damage" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Needle plate / Takeup lever / Presser bar lever</span> <input type="checkbox" name="Checklist_External_Levers" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Handwheel / Drop feed lever</span> <input type="checkbox" name="Checklist_External_Handwheel" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Presser foot alignment / height</span> <input type="checkbox" name="Checklist_External_PresserFoot" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Needle centering / Bobbin winder</span> <input type="checkbox" name="Checklist_External_NeedleCenter" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Bobbin Area / Hook assembly inspected</span> <input type="checkbox" name="Checklist_External_BobbinArea" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                            </div>
+                        </div>
+
+                        <!-- INTERNAL CLEANING -->
+                        <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 class="text-lg font-semibold text-secondary-gray mb-3 border-b pb-1">INTERNAL CLEANING</h3>
+                            <div class="space-y-1 text-sm">
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Remove lint and compacted debris (bobbin area, feed dogs, main shafts)</span> <input type="checkbox" name="Checklist_Clean_Lint" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Clean hidden areas and computer boards (air-dust)</span> <input type="checkbox" name="Checklist_Clean_Boards" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Remove old/gummed-up lubricant/grease</span> <input type="checkbox" name="Checklist_Clean_OldLube" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Clean bobbin area / Needlebar area / Lower cavity</span> <input type="checkbox" name="Checklist_Clean_Cavity" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Upper cavity / Motor (if applicable) cleaned</span> <input type="checkbox" name="Checklist_Clean_UpperMotor" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Prevent potential damage from lint buildup</span> <input type="checkbox" name="Checklist_Clean_PreventDamage" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                            </div>
+                        </div>
+
+                        <!-- LUBRICATION & MISC. CHECKS -->
+                        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 class="text-lg font-semibold text-secondary-gray mb-3 border-b pb-1">LUBRICATION & MISC. CHECKS</h3>
+                            <div class="space-y-1 text-sm">
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Lubricate gears & moving parts (SMO, SuperLube, Grease)</span> <input type="checkbox" name="Checklist_Lube_Parts" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">All metal to metal with Sewing Machine Oil (SMO)</span> <input type="checkbox" name="Checklist_Lube_SMO" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Check motor brushes / all electrical wiring</span> <input type="checkbox" name="Checklist_Misc_Motor" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Check lightbulb (if applicable)</span> <input type="checkbox" name="Checklist_Misc_Lightbulb" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Polish external metal parts</span> <input type="checkbox" name="Checklist_Misc_Polish" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Check motor belt / clean foot pedal</span> <input type="checkbox" name="Checklist_Misc_BeltPedal" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    <!-- COLUMN 2: DIAGNOSIS & ADJUSTMENTS -->
+                    <div>
+                        <!-- INITIAL TEST SEW & TROUBLESHOOTING -->
+                        <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 class="text-lg font-semibold text-secondary-gray mb-3 border-b pb-1">DIAGNOSIS & TROUBLESHOOTING</h3>
+                            <div class="space-y-1 text-sm">
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Conduct test sewing in a controlled environment</span> <input type="checkbox" name="Checklist_Trouble_TestSew" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Used new needle, quilting cotton, high-quality thread</span> <input type="checkbox" name="Checklist_Trouble_NewMaterials" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1 font-semibold">Identify user errors vs machine issues</span> <input type="checkbox" name="Checklist_Trouble_IdentifyErrors" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Threading issues / Tension check</span> <input type="checkbox" name="Checklist_Trouble_TensionCheck" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Straight stitch / Zig zag stitch test</span> <input type="checkbox" name="Checklist_Trouble_StitchTest" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Reverse stitch / Motor & drive tests</span> <input type="checkbox" name="Checklist_Trouble_MotorTest" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Noises / Vibrations / Fabric bunching</span> <input type="checkbox" name="Checklist_Trouble_Noise" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Thread nesting / skipped stitches / thread breaking / needle breaking</span> <input type="checkbox" name="Checklist_Trouble_Nesting" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">No power or no stitches</span> <input type="checkbox" name="Checklist_Trouble_NoPower" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Narrow down potential problems / Broken part identified</span> <input type="checkbox" name="Checklist_Trouble_BrokenPart" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                            </div>
+                        </div>
+                        
+                        <!-- TIMING & ADJUSTMENTS -->
+                        <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 class="text-lg font-semibold text-secondary-gray mb-3 border-b pb-1">TIMING & ADJUSTMENTS</h3>
+                            <div class="space-y-1 text-sm">
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Opened machine / Cover removal</span> <input type="checkbox" name="Checklist_Timing_Open" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Tension assembly cleaned/adjusted</span> <input type="checkbox" name="Checklist_Timing_Tension" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Hook timing / Feed dog timing adjustment</span> <input type="checkbox" name="Checklist_Timing_HookFeed" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Needle bar height / Needle Position centering</span> <input type="checkbox" name="Checklist_Timing_NeedleBar" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Hook/needle clearance check</span> <input type="checkbox" name="Checklist_Timing_Clearance" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Zig zag width / Parabola adjustment</span> <input type="checkbox" name="Checklist_Timing_ZigZag" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Check for internal component wear/issues</span> <input type="checkbox" name="Checklist_Timing_Wear" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></D></span></label>
+                            </div>
+                        </div>
+                        
+                        <!-- FINAL TEST SEW & BALANCE -->
+                        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 class="text-lg font-semibold text-secondary-gray mb-3 border-b pb-1">FINAL TEST SEW & BALANCE</h3>
+                            <div class="space-y-1 text-sm">
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Test sewing successful after cleaning/lubrication</span> <input type="checkbox" name="Checklist_Final_Successful" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Clean outside of machine</span> <input type="checkbox" name="Checklist_Final_Clean" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Checked straight and specialty stitches</span> <input type="checkbox" name="Checklist_Final_Stitches" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Proper threading / tension / takeup lever operation ensured</span> <input type="checkbox" name="Checklist_Final_Tension" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Wind bobbin / Test bobbin winding & operation</span> <input type="checkbox" name="Checklist_Final_Bobbin" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Noises / Motor performance / Overall operation verified</span> <input type="checkbox" name="Checklist_Final_MotorNoise" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Power cord, foot pedal, accessories returned with machine</span> <input type="checkbox" name="Checklist_Final_Accessories" class="h-4 w-4 text-primary-blue border-gray-300 rounded"></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- MAJOR REPAIRS PERFORMED CHECKBOXES -->
+                <div class="mt-8 p-4 bg-red-50 rounded-lg border border-red-200">
+                    <h3 class="text-lg font-bold text-red-700 mb-3 border-b border-red-300 pb-1">MAJOR REPAIRS PERFORMED</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="Repair_Electronics" class="h-4 w-4 text-primary-blue border-gray-300 rounded"><span>Electronics/Wiring</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="Repair_ComputerBoards" class="h-4 w-4 text-primary-blue border-gray-300 rounded"><span>Computer boards</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="Repair_Screens" class="h-4 w-4 text-primary-blue border-gray-300 rounded"><span>Screens/LCD</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="Repair_MajorPart" class="h-4 w-4 text-primary-blue border-gray-300 rounded"><span>Major part replacement</span></label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PARTS & COST BREAKDOWN -->
+            <section class="mb-10">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Parts Purchased -->
+                    <div>
+                        <h2 class="text-xl font-bold text-primary-blue mb-3 border-b-2 border-primary-blue pb-1">PARTS PURCHASED / REPAIRS</h2>
+                        <p class="text-sm text-secondary-gray mb-2">List any parts replaced (P/N, Description, Cost).</p>
+                        <textarea rows="8" name="PartsPurchased" id="PartsPurchased" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:border-primary-blue focus:ring-1 focus:ring-primary-blue" placeholder="e.g., 1x Needle Position Sensor (P/N 12345) - $45.00
+1x Bobbin Case (P/N 67890) - $30.00"></textarea>
+                    </div>
+
+                    <!-- Cost Breakdown -->
+                    <div class="p-6 bg-gray-50 rounded-lg border border-gray-200">
+                        <h2 class="text-xl font-bold text-primary-blue mb-4 border-b-2 border-primary-blue pb-1">COST BREAKDOWN</h2>
+                        <div class="space-y-3 text-lg">
+                            <div class="flex justify-between items-center">
+                                <label for="ShopHours" class="text-secondary-gray">Shop Hours / Labor Rate:</label>
+                                <div class="flex items-center">
+                                    <span class="text-gray-500 mr-1">$</span>
+                                    <input type="number" step="0.01" name="ShopHours" id="ShopHours" class="w-32 border-b border-gray-300 p-1 text-right font-medium focus:border-primary-blue focus:outline-none" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <label for="CostParts" class="text-secondary-gray">Part Replacement Cost:</label>
+                                <div class="flex items-center">
+                                    <span class="text-gray-500 mr-1">$</span>
+                                    <input type="number" step="0.01" name="CostParts" id="CostParts" class="w-32 border-b border-gray-300 p-1 text-right font-medium focus:border-primary-blue focus:outline-none" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <label for="CostMaterials" class="text-secondary-gray">Materials/Supply Fee:</label>
+                                <div class="flex items-center">
+                                    <span class="text-gray-500 mr-1">$</span>
+                                    <input type="number" step="0.01" name="CostMaterials" id="CostMaterials" class="w-32 border-b border-gray-300 p-1 text-right font-medium focus:border-primary-blue focus:outline-none" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center border-t pt-3">
+                                <label for="Subtotal" class="font-semibold text-secondary-gray">Subtotal:</label>
+                                <div class="flex items-center">
+                                    <span class="text-gray-500 mr-1">$</span>
+                                    <input type="number" step="0.01" name="Subtotal" id="Subtotal" class="w-32 border-b border-gray-300 p-1 text-right font-semibold focus:border-primary-blue focus:outline-none" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <label for="Tax" class="font-semibold text-secondary-gray">Sales Tax:</label>
+                                <div class="flex items-center">
+                                    <span class="text-gray-500 mr-1">$</span>
+                                    <input type="number" step="0.01" name="Tax" id="Tax" class="w-32 border-b border-gray-300 p-1 text-right font-semibold focus:border-primary-blue focus:outline-none" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center text-2xl font-extrabold text-primary-blue border-t-2 border-primary-blue pt-3 mt-3">
+                                <label for="TotalDue" class="">TOTAL DUE:</label>
+                                <div class="flex items-center">
+                                    <span class="mr-1">$</span>
+                                    <input type="number" step="0.01" name="TotalDue" id="TotalDue" class="w-40 border-b-2 border-primary-blue p-1 text-right focus:border-primary-blue focus:outline-none" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FOOTER FOR NOTES -->
+            <section class="pt-4 border-t border-gray-300">
+                <h2 class="text-base font-bold text-secondary-gray mb-2">PAYMENT & NOTES</h2>
+                <textarea rows="3" name="PaymentNotes" id="PaymentNotes" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:border-primary-blue focus:ring-1 focus:ring-primary-blue" placeholder="e.g., Payment received via Credit Card (Visa). Machine test sewn with customer at pickup."></textarea>
+                <p class="text-center text-sm text-gray-500 mt-6">Thank you for your business!</p>
+            </section>
+        </form>
+        
+    </div>
+</body>
+</html>

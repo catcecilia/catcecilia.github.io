@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sewing Machine Service Drop-Off Agreement</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for print media and general aesthetics */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                color: #000;
+                background-color: #fff;
+            }
+            .document-card {
+                box-shadow: none !important;
+                border: none !important;
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+            }
+            /* Ensure inputs and textareas are visible for printing */
+            input[type="text"], textarea {
+                border-bottom: 1px solid #333 !important;
+                border-top: none !important;
+                border-left: none !important;
+                border-right: none !important;
+                padding: 0 4px !important;
+            }
+            /* Remove blue background from the clause section when printing */
+            .clause-section {
+                background-color: transparent !important;
+                border: 1px solid #333 !important;
+            }
+            /* Hide save button when printing */
+            .no-print {
+                display: none;
+            }
+        }
+
+        /* Set default font to Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+            color: #1f2937;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-red': '#dc2626',
+                        'secondary-gray': '#4b5563',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="p-4 md:p-8">
+    <div class="document-card bg-white shadow-2xl rounded-2xl p-6 md:p-10 mx-auto max-w-5xl border border-gray-100">
+
+        <!-- SAVE DIGITAL COPY SCRIPT -->
+        <script>
+            /**
+             * Extracts form data and formats it for digital archiving in a text file.
+             * @param {Event} event - The form submission event.
+             */
+            function saveDigitalCopy(event) {
+                event.preventDefault();
+
+                const form = event.target.closest('form');
+                if (!form) return;
+
+                const fields = form.querySelectorAll('input, textarea');
+                let output = "--- SERVICE DROP-OFF AGREEMENT DIGITAL ARCHIVE ---\n\n";
+
+                // Map elements to their display labels
+                const labels = {
+                    'InvoiceNum': 'Invoice/WO #',
+                    'CustName': 'Customer Name:',
+                    'CustPhone': 'Customer Phone:',
+                    'CustEmail': 'Customer Email:',
+                    'MachineMake': 'Machine Make:',
+                    'MachineModel': 'Machine Model:',
+                    'SerialNum': 'Serial #:',
+                    'DateSubmitted': 'Date Submitted:',
+                    'ReasonForService': 'Reason for Service (Customer Reported):',
+                    'ItemsBroughtIn': 'Items Brought In (Accessories):',
+                    'IntakeCondition': '--- CONDITION OF INTAKE ITEM(S) (Technician Notes) ---',
+                    'CustSignaturePrint': 'Customer Signature (Printed Name):',
+                    'TechSignaturePrint': 'Technician Signature (Printed Name):',
+                };
+
+                // Extract all input values
+                fields.forEach(field => {
+                    const name = field.name || field.id;
+                    const label = labels[name] || name;
+                    let value = '';
+
+                    if (field.type === 'text' || field.tagName === 'TEXTAREA') {
+                        value = field.value.replace(/\n/g, '\n    '); // Indent multiline notes
+
+                        if (name === 'IntakeCondition' || name === 'ReasonForService') {
+                            output += `\n${label}\n${'='.repeat(label.length)}\n    ${value}\n\n`;
+                        } else if (name === 'ItemsBroughtIn') {
+                            output += `\n${label}: ${value}\n\n`;
+                        } else {
+                            output += `${label}: ${value}\n`;
+                        }
+                    }
+                });
+
+                // Add Financial Clause Details
+                output += "--- FINANCIAL AGREEMENT ---\n";
+                output += "Labor Rate: [See below input fields]\n";
+                output += "Sales Tax: [Applicable]\n";
+                output += "Parts/Materials: [Paid by Customer]\n";
+                output += "Critical Clause Accepted: Yes (Payment for troubleshooting required, even if irreparable)\n\n";
+                
+                // Final Signatures
+                const custPrint = form.querySelector('[name="CustSignaturePrint"]').value;
+                const techPrint = form.querySelector('[name="TechSignaturePrint"]').value;
+                output += `CUSTOMER ACCEPTANCE (Printed): ${custPrint}\n`;
+                output += `TECHNICIAN CONFIRMATION (Printed): ${techPrint}\n`;
+
+
+                // Generate filename based on date and machine model
+                const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+                const model = form.querySelector('[name="MachineModel"]').value.replace(/[^a-zA-Z0-9]/g, '_') || 'UnknownModel';
+                const filename = `IntakeForm_${model}_${date}.txt`;
+
+                // Create and download the file
+                const blob = new Blob([output], { type: 'text/plain' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        </script>
+
+        <form onsubmit="saveDigitalCopy(event)">
+            <button type="submit" class="no-print bg-primary-red text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-150 absolute top-4 right-4 text-sm">
+                Save Digital Copy (.txt)
+            </button>
+
+            <!-- HEADER AND BUSINESS INFO -->
+            <header class="flex flex-col sm:flex-row justify-between items-start mb-8 border-b-4 border-primary-red pb-4">
+                <div class="space-y-1">
+                    <h1 class="text-4xl font-extrabold text-primary-red tracking-tight">SERVICE DROP-OFF AGREEMENT</h1>
+                    <p class="text-lg text-secondary-gray font-semibold">Sewing Machine Service Authorization</p>
+                </div>
+                <div class="mt-4 sm:mt-0 text-right space-y-1 text-sm text-gray-600">
+                    <p class="text-xl font-bold text-primary-red">Baybrook & Co</p>
+                    <p>Date Submitted: <input type="text" name="DateSubmitted" id="DateSubmitted" class="border-b border-gray-300 w-24 p-1 focus:border-primary-red focus:outline-none" placeholder="YYYY-MM-DD"></p>
+                    <p>Invoice/WO #: <input type="text" name="InvoiceNum" id="InvoiceNum" value="WO-2025-" class="border-b border-gray-300 w-32 p-1 focus:border-primary-red focus:outline-none"></p>
+                </div>
+            </header>
+
+            <!-- CUSTOMER & MACHINE DETAILS -->
+            <section class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Customer Info -->
+                <div class="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
+                    <h2 class="text-base font-bold text-secondary-gray mb-3 border-b pb-1">CUSTOMER INFORMATION</h2>
+                    <div class="space-y-2 text-sm">
+                        <p>Name: <input type="text" name="CustName" id="CustName" class="border-b border-gray-300 w-full p-1 focus:border-primary-red focus:outline-none" placeholder="Jane Doe"></p>
+                        <p>Phone: <input type="text" name="CustPhone" id="CustPhone" class="border-b border-gray-300 w-full p-1 focus:border-primary-red focus:outline-none" placeholder="(555) 123-4567"></p>
+                        <p>Email: <input type="text" name="CustEmail" id="CustEmail" class="border-b border-gray-300 w-full p-1 focus:border-primary-red focus:outline-none" placeholder="jane.doe@example.com"></p>
+                    </div>
+                </div>
+                
+                <!-- Machine Details -->
+                <div class="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
+                    <h2 class="text-base font-bold text-secondary-gray mb-3 border-b pb-1">SEWING MACHINE DETAILS</h2>
+                    <div class="space-y-2 text-sm">
+                        <p>Make: <input type="text" name="MachineMake" id="MachineMake" class="border-b border-gray-300 w-full p-1 focus:border-primary-red focus:outline-none" placeholder="Brother / Janome"></p>
+                        <p>Model: <input type="text" name="MachineModel" id="MachineModel" class="border-b border-gray-300 w-full p-1 focus:border-primary-red focus:outline-none" placeholder="Innov-is BQ3100"></p>
+                        <p>Serial #: <input type="text" name="SerialNum" id="SerialNum" class="border-b border-gray-300 w-full p-1 focus:border-primary-red focus:outline-none" placeholder="A1B2C3D4"></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- REASON FOR SERVICE & ITEMS BROUGHT IN -->
+            <section class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h2 class="text-base font-bold text-secondary-gray mb-2 border-b pb-1">REASON FOR SERVICE (Customer Description)</h2>
+                    <textarea rows="4" name="ReasonForService" id="ReasonForService" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:border-primary-red focus:ring-1 focus:ring-primary-red" placeholder="e.g., Skipped stitches, machine running sluggish, unusual noise..."></textarea>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-secondary-gray mb-2 border-b pb-1">ITEMS BROUGHT IN (Accessories)</h2>
+                    <textarea rows="4" name="ItemsBroughtIn" id="ItemsBroughtIn" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:border-primary-red focus:ring-1 focus:ring-primary-red" placeholder="e.g., Foot Pedal, Power Cord, Embroidery Unit, Bobbins..."></textarea>
+                </div>
+            </section>
+
+            <!-- TECHNICIAN INTAKE CONDITION NOTES -->
+            <section class="mb-8 p-4 bg-red-50 rounded-lg border border-red-300">
+                <h2 class="text-base font-bold text-red-700 mb-2 border-b border-red-700 pb-1">CONDITION OF INTAKE ITEM(S) (Technician Notes)</h2>
+                <textarea rows="6" name="IntakeCondition" id="IntakeCondition" class="w-full border border-red-300 rounded-lg p-3 text-sm focus:border-primary-red focus:ring-1 focus:ring-primary-red" placeholder="e.g., Small scratch on front panel. Hand wheel spins freely. LCD screen appears clear. No visible damage to foot pedal cord."></textarea>
+            </section>
+
+            <!-- FINANCIAL AGREEMENT & AUTHORIZATION -->
+            <section class="mb-10 clause-section p-6 bg-red-100 rounded-lg border-2 border-primary-red shadow-lg">
+                <h2 class="text-xl font-bold text-primary-red mb-4 border-b-2 border-primary-red pb-1">FINANCIAL AGREEMENT & AUTHORIZATION</h2>
+                
+                <div class="text-sm text-gray-700 space-y-3">
+                    <p class="font-semibold">By signing below, the Customer acknowledges and agrees to the following terms of service:</p>
+
+                    <ul class="list-disc list-inside space-y-2 ml-4">
+                        <li>**Shop Hours/Labor Rate:** The Customer agrees to pay the technician's prevailing shop hour/labor rate for all time spent troubleshooting, servicing, and repairing the machine. (Current rate is $\$\text{120.00/hour}$ estimated, final amount on invoice).</li>
+                        <li>**Parts & Materials:** All costs for part replacement (including shipping and handling) and a standard material/supply fee are the responsibility of the Customer and will be added to the final invoice.</li>
+                        <li>**Sales Tax:** Applicable local and state sales tax will be applied to all parts and materials purchased.</li>
+                        <li class="font-bold text-primary-red">**CRITICAL CLAUSE (Troubleshooting Fee):** The Customer accepts that the labor charge for diagnostics and troubleshooting (shop hours/labor rate) is due and payable even if the machine is deemed irreparable or if the Customer declines the recommended repair. This covers the technician's time spent assessing the machine's condition.</li>
+                    </ul>
+
+                    <p class="pt-2 font-medium">The Customer authorizes the Technician to perform the necessary diagnostic and repair work as outlined in the service request.</p>
+                </div>
+            </section>
+
+            <!-- SIGNATURES -->
+            <section class="pt-4 border-t border-gray-300">
+                <div class="grid grid-cols-2 gap-8 text-sm">
+                    <div>
+                        <p class="border-b border-gray-500 pt-8 mb-1"></p>
+                        <p class="text-center text-secondary-gray">Customer Signature / Acceptance</p>
+                        <input type="text" name="CustSignaturePrint" id="CustSignaturePrint" class="w-full text-center border-t-0 border-l-0 border-r-0 border-b border-transparent focus:border-gray-500 p-1 mt-1" placeholder="Printed Name (Mandatory)">
+                    </div>
+                    <div>
+                        <p class="border-b border-gray-500 pt-8 mb-1"></p>
+                        <p class="text-center text-secondary-gray">Technician Signature</p>
+                        <input type="text" name="TechSignaturePrint" id="TechSignaturePrint" class="w-full text-center border-t-0 border-l-0 border-r-0 border-b border-transparent focus:border-gray-500 p-1 mt-1" placeholder="Printed Name">
+                    </div>
+                </div>
+            </section>
+        </form>
+
+    </div>
+</body>
+</html>

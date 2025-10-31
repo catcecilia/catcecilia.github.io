@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technician Service Work Log</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for print media and general aesthetics */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                color: #000;
+                background-color: #fff;
+            }
+            .document-card {
+                box-shadow: none !important;
+                border: none !important;
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+            }
+            /* Ensure textareas are visible for printing */
+            input[type="text"], textarea {
+                border-bottom: 1px solid #333 !important;
+                border-top: none !important;
+                border-left: none !important;
+                border-right: none !important;
+                padding: 0 4px !important;
+            }
+            /* Hide save button when printing */
+            .no-print {
+                display: none;
+            }
+        }
+
+        /* Set default font to Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+            color: #1f2937;
+        }
+        /* Custom border for checklist items */
+        .checklist-item {
+            border-bottom: 1px dashed #d1d5db;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-green': '#057a55', /* Using a professional green for a log/notes tone */
+                        'secondary-gray': '#4b5563',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="p-4 md:p-8">
+    <div class="document-card bg-white shadow-2xl rounded-2xl p-6 md:p-10 mx-auto max-w-5xl border border-gray-100">
+
+        <!-- SAVE DIGITAL COPY SCRIPT -->
+        <script>
+            /**
+             * Extracts form data and formats it for digital archiving in a text file.
+             * @param {Event} event - The form submission event.
+             */
+            function saveDigitalCopy(event) {
+                event.preventDefault();
+
+                const form = event.target.closest('form');
+                if (!form) return;
+
+                const fields = form.querySelectorAll('input, textarea');
+                let output = "--- TECHNICIAN WORK LOG DIGITAL ARCHIVE ---\n\n";
+
+                // Map elements to their display labels
+                const labels = {
+                    'WorkOrder': 'Work Order #',
+                    'TechnicianName': 'Technician:',
+                    'MachineMake': 'Machine Make:',
+                    'MachineModel': 'Machine Model:',
+                    'DateStarted': 'Date Work Started:',
+                    'ReasonForService': 'Reason for Service (Customer Reported):',
+                    'ItemsBroughtIn': 'Items Brought In (Accessories):',
+                    'WorkNotes': '--- WORK PERFORMED & NOTES ---',
+                    'TechSignature': 'Technician Sign-Off:',
+                    'DateCompleted': 'Date Completed:',
+                };
+
+                // Extract all input values
+                fields.forEach(field => {
+                    const name = field.name || field.id;
+                    const label = labels[name] || name;
+                    let value = '';
+
+                    if (field.type === 'checkbox') {
+                        value = field.checked ? '[X]' : '[ ]';
+                        // For checkboxes, use the text content of the parent label as the label
+                        const itemLabel = field.closest('label').querySelector('span').textContent.trim();
+                        output += `${value} ${itemLabel}\n`;
+                    } else if (field.type === 'text' || field.tagName === 'TEXTAREA') {
+                        value = field.value.replace(/\n/g, '\n    '); // Indent multiline notes
+                        output += `${label}: ${value}\n`;
+
+                        if (name === 'ItemsBroughtIn') {
+                            output += '\n\n'; // Add space before notes section
+                        }
+                    }
+                });
+
+                // Generate filename based on date and machine model
+                const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+                const model = form.querySelector('[name="MachineModel"]').value.replace(/[^a-zA-Z0-9]/g, '_') || 'UnknownModel';
+                const filename = `WorkLog_${model}_${date}.txt`;
+
+                // Create and download the file
+                const blob = new Blob([output], { type: 'text/plain' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        </script>
+
+
+        <form onsubmit="saveDigitalCopy(event)">
+            <button type="submit" class="no-print bg-primary-green text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition duration-150 absolute top-4 right-4 text-sm">
+                Save Digital Copy (.txt)
+            </button>
+            
+            <!-- HEADER AND BUSINESS INFO -->
+            <header class="flex flex-col sm:flex-row justify-between items-start mb-8 border-b-4 border-primary-green pb-4">
+                <div class="space-y-1">
+                    <h1 class="text-4xl font-extrabold text-primary-green tracking-tight">TECHNICIAN WORK LOG</h1>
+                    <p class="text-lg text-secondary-gray font-semibold">Internal Service Documentation</p>
+                </div>
+                <div class="mt-4 sm:mt-0 text-right space-y-1 text-sm text-gray-600">
+                    <p class="text-xl font-bold text-primary-green">Job Reference</p>
+                    <p>Work Order #<input type="text" name="WorkOrder" id="WorkOrder" value="WO-2025-" class="border-b border-gray-300 w-32 p-1 focus:border-primary-green focus:outline-none"></p>
+                    <p>Technician: <input type="text" name="TechnicianName" id="TechnicianName" class="border-b border-gray-300 w-32 p-1 focus:border-primary-green focus:outline-none" placeholder="Tech Name"></p>
+                </div>
+            </header>
+
+            <!-- JOB DETAILS (READ-ONLY/INPUT) -->
+            <section class="mb-8 p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
+                <h2 class="text-base font-bold text-secondary-gray mb-3 border-b pb-1">SERVICE & MACHINE SUMMARY</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <!-- Row 1 -->
+                    <div>
+                        <label class="block font-medium mb-1">Machine Make:</label>
+                        <input type="text" name="MachineMake" id="MachineMake" class="border-b border-gray-300 w-full p-1 focus:border-primary-green focus:outline-none" placeholder="e.g., Brother">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Machine Model:</label>
+                        <input type="text" name="MachineModel" id="MachineModel" class="border-b border-gray-300 w-full p-1 focus:border-primary-green focus:outline-none" placeholder="e.g., Innov-is BQ3100">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Date Work Started:</label>
+                        <input type="text" name="DateStarted" id="DateStarted" class="border border-gray-300 rounded-md w-full p-2 focus:border-primary-green focus:ring-1 focus:ring-primary-green" placeholder="YYYY-MM-DD">
+                    </div>
+                </div>
+                
+                <!-- Row 2 -->
+                <div class="mt-4">
+                    <label class="block font-medium mb-1 text-sm">Reason for Service (Customer Reported):</label>
+                    <input type="text" name="ReasonForService" id="ReasonForService" class="border-b border-gray-300 w-full p-1 focus:border-primary-green focus:outline-none" placeholder="e.g., Skipped stitches and nesting in the bobbin area.">
+                </div>
+
+                <!-- Row 3 -->
+                <div class="mt-4">
+                    <label class="block font-medium mb-1 text-sm">Items Brought In (Accessories):</label>
+                    <input type="text" name="ItemsBroughtIn" id="ItemsBroughtIn" class="border-b border-gray-300 w-full p-1 focus:border-primary-green focus:outline-none" placeholder="e.g., Foot Pedal, Power Cord, #37D foot.">
+                </div>
+            </section>
+
+            <!-- WORK LOG NOTES (FREE FORM) -->
+            <section class="mb-8">
+                <h2 class="text-xl font-bold text-primary-green mb-3 border-b-2 border-primary-green pb-1">WORK PERFORMED & NOTES</h2>
+                <p class="text-sm text-secondary-gray mb-2">Record all diagnostic findings, repair steps, parts used, adjustments made, and final testing results below. Include time stamps or hours logged if applicable.</p>
+                <textarea rows="20" name="WorkNotes" id="WorkNotes" class="w-full border border-gray-300 rounded-lg p-4 text-sm focus:border-primary-green focus:ring-1 focus:ring-primary-green" placeholder="[Date/Time] - Disassembled exterior covers. Noted heavy lint compaction around feed dogs and lower shaft.
+
+[Date/Time] - Verified hook timing was off by 3 degrees. Adjusted hook timing per factory specs. Cleaned all lint and removed gummed oil from tension discs. Lubricated with synthetic oil.
+
+[Date/Time] - Test Sew: Performed zigzag and straight stitch test on denim. Stitches are balanced and correct. Tension verified. Machine is functioning correctly.
+
+[Parts Used] - 1x new needle position sensor (P/N 12345)."></textarea>
+            </section>
+
+            <!-- SERVICE CHECKLIST - 2 COLUMNS ON MD SCREEN AND UP -->
+            <section class="mb-10">
+                <h2 class="text-xl font-bold text-primary-green mb-4 pb-1 border-b-2 border-primary-green">SERVICE CHECKLIST & RECORD</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    
+                    <!-- COLUMN 1: DIAGNOSIS & INTERNAL WORK -->
+                    <div>
+                        
+                        <!-- EXTERNAL INSPECTION -->
+                        <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 class="text-lg font-semibold text-secondary-gray mb-3 border-b pb-1">EXTERNAL INSPECTION</h3>
+                            <div class="space-y-1 text-sm">
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Note any blemishes, wear, etc.</span> <input type="checkbox" name="Checklist_External_Blemishes" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Spool pins / Knobs in place</span> <input type="checkbox" name="Checklist_External_SpoolPins" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Broken parts / Damage assessment</span> <input type="checkbox" name="Checklist_External_Damage" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Needle plate / Takeup lever / Presser bar lever</span> <input type="checkbox" name="Checklist_External_Levers" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Handwheel / Drop feed lever</span> <input type="checkbox" name="Checklist_External_Handwheel" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Presser foot alignment / height</span> <input type="checkbox" name="Checklist_External_PresserFoot" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Needle centering / Bobbin winder</span> <input type="checkbox" name="Checklist_External_NeedleCenter" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Bobbin Area / Hook assembly inspected</span> <input type="checkbox" name="Checklist_External_BobbinArea" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                            </div>
+                        </div>
+                        
+                        <!-- INITIAL TEST SEW & TROUBLESHOOTING -->
+                        <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 class="text-lg font-semibold text-secondary-gray mb-3 border-b pb-1">INITIAL TEST SEW & TROUBLESHOOTING</h3>
+                            <div class="space-y-1 text-sm">
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Conduct test sewing in a controlled environment</span> <input type="checkbox" name="Checklist_Trouble_TestSew" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Used new needle, quilting cotton, high-quality thread</span> <input type="checkbox" name="Checklist_Trouble_NewMaterials" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1 font-semibold">Identify user errors vs machine issues</span> <input type="checkbox" name="Checklist_Trouble_IdentifyErrors" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Threading issues / Tension check</span> <input type="checkbox" name="Checklist_Trouble_TensionCheck" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Straight stitch / Zig zag stitch test</span> <input type="checkbox" name="Checklist_Trouble_StitchTest" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Reverse stitch / Motor & drive tests</span> <input type="checkbox" name="Checklist_Trouble_MotorTest" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Noises / Vibrations / Fabric bunching</span> <input type="checkbox" name="Checklist_Trouble_Noise" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Thread nesting / skipped stitches / thread breaking / needle breaking</span> <input type="checkbox" name="Checklist_Trouble_Nesting" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">No power or no stitches</span> <input type="checkbox" name="Checklist_Trouble_NoPower" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Narrow down potential problems / Broken part identified</span> <input type="checkbox" name="Checklist_Trouble_BrokenPart" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                            </div>
+                        </div>
+
+                        <!-- INTERNAL CLEANING -->
+                        <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 class="text-lg font-semibold text-secondary-gray mb-3 border-b pb-1">INTERNAL CLEANING</h3>
+                            <div class="space-y-1 text-sm">
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Remove lint and compacted debris (bobbin area, feed dogs, main shafts)</span> <input type="checkbox" name="Checklist_Clean_Lint" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Clean hidden areas and computer boards (air-dust)</span> <input type="checkbox" name="Checklist_Clean_Boards" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Remove old/gummed-up lubricant/grease</span> <input type="checkbox" name="Checklist_Clean_OldLube" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Clean bobbin area / Needlebar area / Lower cavity</span> <input type="checkbox" name="Checklist_Clean_Cavity" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Upper cavity / Motor (if applicable) cleaned</span> <input type="checkbox" name="Checklist_Clean_UpperMotor" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Prevent potential damage from lint buildup</span> <input type="checkbox" name="Checklist_Clean_PreventDamage" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    <!-- COLUMN 2: ADJUSTMENTS & FINAL VERIFICATION -->
+                    <div>
+                        
+                        <!-- LUBRICATION & MISC. CHECKS -->
+                        <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 class="text-lg font-semibold text-secondary-gray mb-3 border-b pb-1">LUBRICATION & MISC. CHECKS</h3>
+                            <div class="space-y-1 text-sm">
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Lubricate gears & moving parts (SMO, SuperLube, Grease)</span> <input type="checkbox" name="Checklist_Lube_Parts" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">All metal to metal with Sewing Machine Oil (SMO)</span> <input type="checkbox" name="Checklist_Lube_SMO" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Check motor brushes / all electrical wiring</span> <input type="checkbox" name="Checklist_Misc_Motor" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Check lightbulb (if applicable)</span> <input type="checkbox" name="Checklist_Misc_Lightbulb" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Polish external metal parts</span> <input type="checkbox" name="Checklist_Misc_Polish" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Check motor belt / clean foot pedal</span> <input type="checkbox" name="Checklist_Misc_BeltPedal" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                            </div>
+                        </div>
+                        
+                        <!-- TIMING & ADJUSTMENTS -->
+                        <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 class="text-lg font-semibold text-secondary-gray mb-3 border-b pb-1">TIMING & ADJUSTMENTS</h3>
+                            <div class="space-y-1 text-sm">
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Opened machine / Cover removal</span> <input type="checkbox" name="Checklist_Timing_Open" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Tension assembly cleaned/adjusted</span> <input type="checkbox" name="Checklist_Timing_Tension" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Hook timing / Feed dog timing adjustment</span> <input type="checkbox" name="Checklist_Timing_HookFeed" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Needle bar height / Needle Position centering</span> <input type="checkbox" name="Checklist_Timing_NeedleBar" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Hook/needle clearance check</span> <input type="checkbox" name="Checklist_Timing_Clearance" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Zig zag width / Parabola adjustment</span> <input type="checkbox" name="Checklist_Timing_ZigZag" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Check for internal component wear/issues</span> <input type="checkbox" name="Checklist_Timing_Wear" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                            </div>
+                        </div>
+                        
+                        <!-- FINAL TEST SEW & BALANCE -->
+                        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 class="text-lg font-semibold text-secondary-gray mb-3 border-b pb-1">FINAL TEST SEW & BALANCE</h3>
+                            <div class="space-y-1 text-sm">
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Test sewing successful after cleaning/lubrication</span> <input type="checkbox" name="Checklist_Final_Successful" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Clean outside of machine</span> <input type="checkbox" name="Checklist_Final_Clean" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Checked straight and specialty stitches</span> <input type="checkbox" name="Checklist_Final_Stitches" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Proper threading / tension / takeup lever operation ensured</span> <input type="checkbox" name="Checklist_Final_Tension" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Wind bobbin / Test bobbin winding & operation</span> <input type="checkbox" name="Checklist_Final_Bobbin" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Noises / Motor performance / Overall operation verified</span> <input type="checkbox" name="Checklist_Final_MotorNoise" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                                <label class="flex items-center justify-between checklist-item py-1"><span class="flex-1">Power cord, foot pedal, accessories returned with machine</span> <input type="checkbox" name="Checklist_Final_Accessories" class="h-4 w-4 text-primary-green border-gray-300 rounded"></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- MAJOR REPAIRS PERFORMED CHECKBOXES -->
+                <div class="mt-8 p-4 bg-red-50 rounded-lg border border-red-200">
+                    <h3 class="text-lg font-bold text-red-700 mb-3 border-b border-red-300 pb-1">MAJOR REPAIRS PERFORMED</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="Repair_Electronics" class="h-4 w-4 text-primary-green border-gray-300 rounded"><span>Electronics/Wiring</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="Repair_ComputerBoards" class="h-4 w-4 text-primary-green border-gray-300 rounded"><span>Computer boards</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="Repair_Screens" class="h-4 w-4 text-primary-green border-gray-300 rounded"><span>Screens/LCD</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="Repair_MajorPart" class="h-4 w-4 text-primary-green border-gray-300 rounded"><span>Major part replacement</span></label>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- FOOTER FOR SIGN-OFF -->
+            <section class="pt-4 border-t border-gray-300">
+                <div class="grid grid-cols-2 gap-8 text-sm pt-4">
+                    <div>
+                        <p class="border-b border-gray-500 pt-8 mb-1"></p>
+                        <p class="text-center text-secondary-gray">Technician Sign-Off</p>
+                        <input type="text" name="TechSignature" id="TechSignature" class="w-full text-center border-t-0 border-l-0 border-r-0 border-b border-transparent focus:border-gray-500 p-1 mt-1" placeholder="Printed Name">
+                    </div>
+                    <div>
+                        <p class="border-b border-gray-500 pt-8 mb-1"></p>
+                        <p class="text-center text-secondary-gray">Date Completed</p>
+                        <input type="text" name="DateCompleted" id="DateCompleted" class="w-full text-center border-t-0 border-l-0 border-r-0 border-b border-transparent focus:border-gray-500 p-1 mt-1" placeholder="YYYY-MM-DD">
+                    </div>
+                </div>
+            </section>
+        </form>
+
+    </div>
+</body>
+</html>
