@@ -146,9 +146,9 @@
             }
         </script>
 
-        <form onsubmit="saveDigitalCopy(event)">
-            <button type="submit" class="no-print bg-primary-red text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-150 absolute top-4 right-4 text-sm">
-                Save Digital Copy (.txt)
+        <form>
+            <button type="button" onclick="window.print()" class="no-print bg-primary-red text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-150 absolute top-4 right-4 text-sm">
+                Print Intake
             </button>
 
             <!-- HEADER AND BUSINESS INFO -->
@@ -213,7 +213,7 @@
                     <p class="font-semibold">By signing below, the Customer acknowledges and agrees to the following terms of service:</p>
 
                     <ul class="list-disc list-inside space-y-2 ml-4">
-                        <li>**Shop Hours/Labor Rate:** The Customer agrees to pay the technician's prevailing shop hour/labor rate for all time spent troubleshooting, servicing, and repairing the machine. (Current rate is $\$\text{120.00/hour}$ estimated, final amount on invoice).</li>
+                        <li>**Shop Hours/Labor Rate:** The Customer agrees to pay the technician's prevailing shop hour/labor rate for all time spent troubleshooting, servicing, and repairing the machine. (Current rate is $50/hour, final amount on invoice).</li>
                         <li>**Parts & Materials:** All costs for part replacement (including shipping and handling) and a standard material/supply fee are the responsibility of the Customer and will be added to the final invoice.</li>
                         <li>**Sales Tax:** Applicable local and state sales tax will be applied to all parts and materials purchased.</li>
                         <li class="font-bold text-primary-red">**CRITICAL CLAUSE (Troubleshooting Fee):** The Customer accepts that the labor charge for diagnostics and troubleshooting (shop hours/labor rate) is due and payable even if the machine is deemed irreparable or if the Customer declines the recommended repair. This covers the technician's time spent assessing the machine's condition.</li>
@@ -224,22 +224,132 @@
             </section>
 
             <!-- SIGNATURES -->
+
             <section class="pt-4 border-t border-gray-300">
-                <div class="grid grid-cols-2 gap-8 text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
+                    
                     <div>
-                        <p class="border-b border-gray-500 pt-8 mb-1"></p>
-                        <p class="text-center text-secondary-gray">Customer Signature / Acceptance</p>
-                        <input type="text" name="CustSignaturePrint" id="CustSignaturePrint" class="w-full text-center border-t-0 border-l-0 border-r-0 border-b border-transparent focus:border-gray-500 p-1 mt-1" placeholder="Printed Name (Mandatory)">
+                        <canvas id="custSignaturePad" class="signature-pad border border-gray-500 rounded-md w-full h-32 bg-white"></canvas>
+                        <button type="button" onclick="clearSignature('custSignaturePad')" class="no-print text-sm text-blue-600 hover:text-blue-800 mt-1">Clear Customer Signature</button>
+                        <p class="text-center text-secondary-gray mt-2">Customer Signature / Acceptance</p>
                     </div>
+                    
                     <div>
-                        <p class="border-b border-gray-500 pt-8 mb-1"></p>
-                        <p class="text-center text-secondary-gray">Technician Signature</p>
-                        <input type="text" name="TechSignaturePrint" id="TechSignaturePrint" class="w-full text-center border-t-0 border-l-0 border-r-0 border-b border-transparent focus:border-gray-500 p-1 mt-1" placeholder="Printed Name">
+                        <canvas id="sellerSignaturePad" class="signature-pad border border-gray-500 rounded-md w-full h-32 bg-white"></canvas>
+                        <button type="button" onclick="clearSignature('sellerSignaturePad')" class="no-print text-sm text-blue-600 hover:text-blue-800 mt-1">Clear Seller Signature</button>
+                        <p class="text-center text-secondary-gray mt-2">Seller Signature</p>
                     </div>
+
                 </div>
             </section>
+            <p class="text-center text-sm text-gray-500 mt-8">https://baybrookandco.carrd.co/</p>
         </form>
 
     </div>
+     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- Helper function to initialize a single signature pad ---
+            function initializeSignaturePad(canvasId) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return; // Exit if canvas not found
+                
+                const ctx = canvas.getContext('2d');
+                let drawing = false;
+
+                // Set canvas size for high-DPI displays
+                // Use offsetWidth/Height as it reflects the rendered size
+                function resizeCanvas() {
+                    const dpr = window.devicePixelRatio || 1;
+                    canvas.width = canvas.offsetWidth * dpr;
+                    canvas.height = canvas.offsetHeight * dpr;
+                    ctx.scale(dpr, dpr);
+                    
+                    // Set styles again after resize
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 2;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                }
+                
+                // Initial resize
+                resizeCanvas();
+                
+                // Re-resize if window changes
+                window.addEventListener('resize', resizeCanvas);
+
+                // Get position relative to canvas
+                function getPosition(event) {
+                    const rect = canvas.getBoundingClientRect();
+                    let posX, posY;
+
+                    // Handle touch events
+                    if (event.touches && event.touches.length > 0) {
+                        posX = event.touches[0].clientX - rect.left;
+                        posY = event.touches[0].clientY - rect.top;
+                    }
+                    // Handle mouse events
+                    else {
+                        posX = event.clientX - rect.left;
+                        posY = event.clientY - rect.top;
+                    }
+                    return { x: posX, y: posY };
+                }
+
+                function startDrawing(event) {
+                    drawing = true;
+                    const pos = getPosition(event);
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x, pos.y);
+                }
+
+                function draw(event) {
+                    if (!drawing) return;
+                    event.preventDefault(); // Prevent scrolling while drawing
+                    const pos = getPosition(event);
+                    ctx.lineTo(pos.x, pos.y);
+                    ctx.stroke();
+                }
+
+                function stopDrawing() {
+                    drawing = false;
+                    ctx.beginPath(); // Reset the path
+                }
+
+                // --- Event Listeners ---
+                // Mouse events
+                canvas.addEventListener('mousedown', startDrawing);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDrawing);
+                canvas.addEventListener('mouseleave', stopDrawing);
+
+                // Touch events
+                canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault(); // Prevent "mouse" events
+                    startDrawing(e);
+                }, { passive: false });
+                canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault(); // Prevent scrolling
+                    draw(e);
+                }, { passive: false });
+                canvas.addEventListener('touchend', stopDrawing);
+                canvas.addEventListener('touchcancel', stopDrawing);
+            }
+
+            // Initialize both pads
+            initializeSignaturePad('custSignaturePad');
+            initializeSignaturePad('sellerSignaturePad');
+
+            // --- Global Clear Function ---
+            // Make clear function available globally for the onclick attribute
+            window.clearSignature = (canvasId) => {
+                const canvas = document.getElementById(canvasId);
+                const ctx = canvas.getContext('2d');
+                // Use canvas.width/height (the *buffer* size) not the CSS size
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            };
+        });
+    </script>
 </body>
 </html>
+
