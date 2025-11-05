@@ -38,6 +38,10 @@
             .no-print {
                 display: none;
             }
+            /* Ensure canvas background is white for printing */
+            .signature-pad {
+                background-color: #ffffff !important;
+            }
         }
 
         /* Set default font to Inter */
@@ -45,6 +49,11 @@
             font-family: 'Inter', sans-serif;
             background-color: #f7f9fb;
             color: #1f2937;
+        }
+        
+        /* Style for the canvas */
+        .signature-pad {
+            cursor: crosshair;
         }
     </style>
     <script>
@@ -152,14 +161,20 @@
             </section>
 
             <section class="pt-4 border-t border-gray-300">
-                <div class="grid grid-cols-2 gap-8 text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
+                    
                     <div>
-                        <p class="border-b border-gray-500 pt-8 mb-1"></p>
-                        <p class="text-center text-secondary-gray">Customer Signature / Acceptance</p>                    </div>
-                    <div>
-                        <p class="border-b border-gray-500 pt-8 mb-1"></p>
-                        <p class="text-center text-secondary-gray">Seller Signature</p>
+                        <canvas id="custSignaturePad" class="signature-pad border border-gray-500 rounded-md w-full h-32 bg-white"></canvas>
+                        <button type="button" onclick="clearSignature('custSignaturePad')" class="no-print text-sm text-blue-600 hover:text-blue-800 mt-1">Clear Customer Signature</button>
+                        <p class="text-center text-secondary-gray mt-2">Customer Signature / Acceptance</p>
                     </div>
+                    
+                    <div>
+                        <canvas id="sellerSignaturePad" class="signature-pad border border-gray-500 rounded-md w-full h-32 bg-white"></canvas>
+                        <button type="button" onclick="clearSignature('sellerSignaturePad')" class="no-print text-sm text-blue-600 hover:text-blue-800 mt-1">Clear Seller Signature</button>
+                        <p class="text-center text-secondary-gray mt-2">Seller Signature</p>
+                    </div>
+
                 </div>
             </section>
         </form>
@@ -201,6 +216,111 @@
             totalDueInput.addEventListener('input', () => {
                  priceDisplaySpan.textContent = (parseFloat(salePriceInput.value) || 0).toFixed(2);
             });
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- Helper function to initialize a single signature pad ---
+            function initializeSignaturePad(canvasId) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return; // Exit if canvas not found
+                
+                const ctx = canvas.getContext('2d');
+                let drawing = false;
+
+                // Set canvas size for high-DPI displays
+                // Use offsetWidth/Height as it reflects the rendered size
+                function resizeCanvas() {
+                    const dpr = window.devicePixelRatio || 1;
+                    canvas.width = canvas.offsetWidth * dpr;
+                    canvas.height = canvas.offsetHeight * dpr;
+                    ctx.scale(dpr, dpr);
+                    
+                    // Set styles again after resize
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 2;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                }
+                
+                // Initial resize
+                resizeCanvas();
+                
+                // Re-resize if window changes
+                window.addEventListener('resize', resizeCanvas);
+
+                // Get position relative to canvas
+                function getPosition(event) {
+                    const rect = canvas.getBoundingClientRect();
+                    let posX, posY;
+
+                    // Handle touch events
+                    if (event.touches && event.touches.length > 0) {
+                        posX = event.touches[0].clientX - rect.left;
+                        posY = event.touches[0].clientY - rect.top;
+                    }
+                    // Handle mouse events
+                    else {
+                        posX = event.clientX - rect.left;
+                        posY = event.clientY - rect.top;
+                    }
+                    return { x: posX, y: posY };
+                }
+
+                function startDrawing(event) {
+                    drawing = true;
+                    const pos = getPosition(event);
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x, pos.y);
+                }
+
+                function draw(event) {
+                    if (!drawing) return;
+                    event.preventDefault(); // Prevent scrolling while drawing
+                    const pos = getPosition(event);
+                    ctx.lineTo(pos.x, pos.y);
+                    ctx.stroke();
+                }
+
+                function stopDrawing() {
+                    drawing = false;
+                    ctx.beginPath(); // Reset the path
+                }
+
+                // --- Event Listeners ---
+                // Mouse events
+                canvas.addEventListener('mousedown', startDrawing);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDrawing);
+                canvas.addEventListener('mouseleave', stopDrawing);
+
+                // Touch events
+                canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault(); // Prevent "mouse" events
+                    startDrawing(e);
+                }, { passive: false });
+                canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault(); // Prevent scrolling
+                    draw(e);
+                }, { passive: false });
+                canvas.addEventListener('touchend', stopDrawing);
+                canvas.addEventListener('touchcancel', stopDrawing);
+            }
+
+            // Initialize both pads
+            initializeSignaturePad('custSignaturePad');
+            initializeSignaturePad('sellerSignaturePad');
+
+            // --- Global Clear Function ---
+            // Make clear function available globally for the onclick attribute
+            window.clearSignature = (canvasId) => {
+                const canvas = document.getElementById(canvasId);
+                const ctx = canvas.getContext('2d');
+                // Use canvas.width/height (the *buffer* size) not the CSS size
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            };
         });
     </script>
 </body>
