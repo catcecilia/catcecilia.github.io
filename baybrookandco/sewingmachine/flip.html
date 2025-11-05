@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sewing Machine Invoice of Sale</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for print media and general aesthetics */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                color: #000;
+                background-color: #fff;
+            }
+            .document-card {
+                box-shadow: none !important;
+                border: none !important;
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+            }
+            /* Ensure inputs and textareas are visible for printing */
+            input[type="text"], textarea {
+                border-bottom: 1px solid #333 !important;
+                border-top: none !important;
+                border-left: none !important;
+                border-right: none !important;
+                padding: 0 4px !important;
+            }
+            /* Remove background from the clause section when printing */
+            .clause-section {
+                background-color: transparent !important;
+                border: 1px solid #333 !important;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+
+        /* Set default font to Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+            color: #1f2937;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-red': '#dc2626',
+                        'secondary-gray': '#4b5563',
+                        'primary-blue': '#2563eb',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="p-4 md:p-8">
+    <div class="document-card bg-white shadow-2xl rounded-2xl p-6 md:p-10 mx-auto max-w-5xl border border-gray-100">
+
+        <form>
+            <button type="button" onclick="window.print()" class="no-print bg-primary-red text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-150 absolute top-4 right-4 text-sm">
+                Print Invoice
+            </button>
+
+            <header class="flex flex-col sm:flex-row justify-between items-start mb-8 border-b-4 border-primary-red pb-4">
+                <div class="space-y-1">
+                    <h1 class="text-4xl font-extrabold text-primary-red tracking-tight">INVOICE OF SALE</h1>
+                    <p class="text-lg text-secondary-gray font-semibold">Refurbished Sewing Machine Purchase</p>
+                </div>
+                <div class="mt-4 sm:mt-0 text-right space-y-1 text-sm text-gray-600">
+                    <p class="text-xl font-bold text-primary-red">Baybrook & Co</p>
+                    <p>Date of Sale: <input type="text" name="DateOfSale" id="DateOfSale" class="border-b border-gray-300 w-28 p-1 focus:border-primary-red focus:outline-none" placeholder="YYYY-MM-DD"></p>
+                    <p>Invoice #: <input type="text" name="InvoiceNum" id="InvoiceNum" value="INV-2025-" class="border-b border-gray-300 w-32 p-1 focus:border-primary-red focus:outline-none"></p>
+                </div>
+            </header>
+
+            <section class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
+                    <h2 class="text-base font-bold text-secondary-gray mb-3 border-b pb-1">CUSTOMER INFORMATION</h2>
+                    <div class="space-y-2 text-sm">
+                        <p>Name: <input type="text" name="CustName" id="CustName" class="border-b border-gray-300 w-full p-1 focus:border-primary-red focus:outline-none" placeholder="Jane Doe"></p>
+                        <p>Phone: <input type="text" name="CustPhone" id="CustPhone" class="border-b border-gray-300 w-full p-1 focus:border-primary-red focus:outline-none" placeholder="(555) 123-4567"></p>
+                        <p>Email: <input type="text" name="CustEmail" id="CustEmail" class="border-b border-gray-300 w-full p-1 focus:border-primary-red focus:outline-none" placeholder="jane.doe@example.com"></p>
+                    </div>
+                </div>
+                
+                <div class="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
+                    <h2 class="text-base font-bold text-secondary-gray mb-3 border-b pb-1">PURCHASED MACHINE DETAILS</h2>
+                    <div class="space-y-2 text-sm">
+                        <p>Make: <input type="text" name="MachineMake" id="MachineMake" class="border-b border-gray-300 w-full p-1 focus:border-primary-red focus:outline-none" placeholder="Singer / Kenmore"></p>
+                        <p>Model: <input type="text" name="MachineModel" id="MachineModel" class="border-b border-gray-300 w-full p-1 focus:border-primary-red focus:outline-none" placeholder="401A"></p>
+                        <p>Serial #: <input type="text" name="SerialNum" id="SerialNum" class="border-b border-gray-300 w-full p-1 focus:border-primary-red focus:outline-none" placeholder="NA123456"></p>
+                        <p>Price: $ <input type="text" name="SalePrice" id="SalePrice" class="border-b border-gray-300 w-24 p-1 focus:border-primary-red focus:outline-none" placeholder="450.00"></p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h2 class="text-base font-bold text-secondary-gray mb-2 border-b pb-1">INCLUDED ACCESSORIES</h2>
+                    <textarea rows="6" name="IncludedAccessories" id="IncludedAccessories" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:border-primary-red focus:ring-1 focus:ring-primary-red" placeholder="e.g., Foot Pedal, Power Cord, 3 Bobbins, Zipper Foot, Original Manual..."></textarea>
+                </div>
+                <div class="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
+                    <h2 class="text-base font-bold text-secondary-gray mb-3 border-b pb-1">FINANCIAL SUMMARY</h2>
+                    <div class="space-y-4 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Machine Price:</span>
+                            <span class="font-medium">$<span id="priceDisplay">0.00</span></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <label for="TaxRate" class="text-gray-600">Sales Tax Rate (%):</label>
+                            <input type="text" name="TaxRate" id="TaxRate" class="border-b border-gray-300 w-20 p-1 text-right focus:border-primary-red focus:outline-none" placeholder="8.25">
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <label for="TaxAmount" class="text-gray-600">Sales Tax Amount:</label>
+                            $<input type="text" name="TaxAmount" id="TaxAmount" class="border-b border-gray-300 w-20 p-1 text-right focus:border-primary-red focus:outline-none" placeholder="0.00">
+                        </div>
+                        <hr>
+                        <div class="flex justify-between items-center text-lg font-bold text-primary-red">
+                            <label for="TotalDue">TOTAL DUE:</label>
+                            $<input type="text" name="TotalDue" id="TotalDue" class="border-b-2 border-primary-red w-32 p-1 text-right focus:outline-none font-bold" placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mb-10 clause-section p-6 bg-red-100 rounded-lg border-2 border-primary-red shadow-lg">
+                <h2 class="text-xl font-bold text-primary-red mb-4 border-b-2 border-primary-red pb-1">TERMS OF SALE & LIMITED WARRANTY</h2>
+                
+                <div class="text-sm text-gray-700 space-y-3">
+                    <p class="font-semibold">By signing below, the Customer acknowledges and agrees to the following terms of sale:</p>
+
+                    <ul class="list-disc list-inside space-y-2 ml-4">
+                        <li><strong>"As-Is" Refurbished Condition:</strong> The Customer acknowledges purchasing this machine in "working refurbished condition." The Customer understands that cosmetic blemishes, scratches, or rust may be present but do not impact the sewing machine's functionality, as disclosed in the "Machine Condition" notes above.</li>
+                        
+                        <li><strong>5-Day Limited Warranty:</strong> A limited 5-day warranty is provided, starting from the "Date of Sale." This warranty covers the mechanical and electrical functionality of the machine under normal "wear and tear" and reasonable use.</li>
+
+                        <li><strong>Warranty Exclusions:</strong> This warranty is **VOID** if the machine shows signs of misuse, neglect, dropping, smashing, improper voltage, customer modification, or any customer-inflicted damage. The warranty does not cover cosmetic blemishes disclosed at the time of sale or issues arising from user error.</li>
+
+                        <li class="font-bold text-primary-red"><strong>FINAL SALE:</strong> All sales are final. Beyond the 5-day limited warranty period described above, no refunds, returns, or exchanges will be accepted. The Customer's signature confirms their understanding and acceptance that the sale is final.</li>
+                    </ul>
+
+                    <p class="pt-2 font-medium">The Customer's signature confirms they have read, understood, and accepted these terms and the disclosed condition of the machine.</p>
+                </div>
+            </section>
+
+            <section class="pt-4 border-t border-gray-300">
+                <div class="grid grid-cols-2 gap-8 text-sm">
+                    <div>
+                        <p class="border-b border-gray-500 pt-8 mb-1"></p>
+                        <p class="text-center text-secondary-gray">Customer Signature / Acceptance</p>                    </div>
+                    <div>
+                        <p class="border-b border-gray-500 pt-8 mb-1"></p>
+                        <p class="text-center text-secondary-gray">Seller Signature</p>
+                    </div>
+                </div>
+            </section>
+        </form>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const salePriceInput = document.getElementById('SalePrice');
+            const taxRateInput = document.getElementById('TaxRate');
+            const taxAmountInput = document.getElementById('TaxAmount');
+            const totalDueInput = document.getElementById('TotalDue');
+            const priceDisplaySpan = document.getElementById('priceDisplay');
+
+            function calculateInvoice() {
+                const price = parseFloat(salePriceInput.value) || 0;
+                const rate = parseFloat(taxRateInput.value) || 0;
+
+                const taxAmount = (price * rate) / 100;
+                const totalDue = price + taxAmount;
+
+                // Update the display fields
+                priceDisplaySpan.textContent = price.toFixed(2);
+                taxAmountInput.value = taxAmount.toFixed(2);
+                totalDueInput.value = totalDue.toFixed(2);
+            }
+
+            // Add event listeners to calculate on input
+            salePriceInput.addEventListener('input', calculateInvoice);
+            taxRateInput.addEventListener('input', calculateInvoice);
+            
+            // Optional: Also allow changing tax/total manually
+            taxAmountInput.addEventListener('input', () => {
+                 const price = parseFloat(salePriceInput.value) || 0;
+                 const tax = parseFloat(taxAmountInput.value) || 0;
+                 totalDueInput.value = (price + tax).toFixed(2);
+                 priceDisplaySpan.textContent = price.toFixed(2);
+            });
+            totalDueInput.addEventListener('input', () => {
+                 priceDisplaySpan.textContent = (parseFloat(salePriceInput.value) || 0).toFixed(2);
+            });
+        });
+    </script>
+</body>
+</html>
